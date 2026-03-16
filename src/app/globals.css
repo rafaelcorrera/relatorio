@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f4ece1;
+  --foreground: #241d18;
+  --panel-soft: #fff8ef;
+  --ink: #2d241e;
+  --muted: #74695f;
+  --line: rgba(75, 57, 41, 0.12);
+  --accent: #b6432c;
+  --forest: #2e5a4c;
+  --gold: #d29b42;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-ibm-plex-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-space-grotesk), sans-serif;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 248, 229, 0.9), transparent 30%),
+    radial-gradient(circle at right center, rgba(182, 67, 44, 0.08), transparent 26%),
+    linear-gradient(180deg, #f8f0e6 0%, #f2e7da 44%, #efe4d6 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(182, 67, 44, 0.14);
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(75, 57, 41, 0.22);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+input::file-selector-button {
+  cursor: pointer;
+}
+
+code {
+  font-family: var(--font-ibm-plex-mono), monospace;
+}

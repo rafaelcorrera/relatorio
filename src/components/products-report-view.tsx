@@ -1,0 +1,187 @@
+"use client";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import type { ProductsViewData } from "@/lib/report-views";
+import {
+  CHART_COLORS,
+  ChartFrame,
+  MetricGrid,
+  Panel,
+  RankedList,
+  formatMetricValue,
+  getTooltipStyle,
+} from "@/components/report-ui";
+
+export function ProductsReportView({
+  view,
+}: {
+  view: ProductsViewData;
+}) {
+  return (
+    <div className="grid gap-5">
+      <MetricGrid metrics={view.metrics} />
+
+      <section className="rounded-[28px] border border-[var(--line)] bg-white/84 p-5 text-sm leading-6 text-[var(--muted)] shadow-[0_18px_60px_rgba(46,32,18,0.08)]">
+        {view.curveNote}
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+        <Panel eyebrow="Categorias" title="Volume vendido por categoria">
+          <div className="h-[340px]">
+            <ChartFrame>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={view.categorySeries} layout="vertical" margin={{ left: 0 }}>
+                  <CartesianGrid stroke="rgba(86, 70, 55, 0.08)" horizontal={false} />
+                  <XAxis type="number" stroke="#74695f" tickLine={false} axisLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="label"
+                    width={148}
+                    stroke="#74695f"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value) => `${Number(value ?? 0).toLocaleString("pt-BR")} unidades`}
+                    contentStyle={getTooltipStyle()}
+                  />
+                  <Bar dataKey="quantity" fill="#b6432c" radius={[0, 10, 10, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartFrame>
+          </div>
+        </Panel>
+
+        <Panel eyebrow="Canais" title="Participacao por canal no recorte">
+          <div className="h-[340px]">
+            <ChartFrame>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={view.channelSeries}
+                    dataKey="quantity"
+                    nameKey="label"
+                    innerRadius={70}
+                    outerRadius={112}
+                    paddingAngle={4}
+                  >
+                    {view.channelSeries.map((item, index) => (
+                      <Cell
+                        key={item.label}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value) => `${Number(value ?? 0).toLocaleString("pt-BR")} unidades`}
+                    contentStyle={getTooltipStyle()}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartFrame>
+          </div>
+        </Panel>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
+        <Panel eyebrow="Faturamento" title="Faturamento por categoria">
+          <div className="h-[340px]">
+            <ChartFrame>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={view.revenueCategorySeries} layout="vertical" margin={{ left: 0 }}>
+                  <CartesianGrid stroke="rgba(86, 70, 55, 0.08)" horizontal={false} />
+                  <XAxis type="number" stroke="#74695f" tickLine={false} axisLine={false} />
+                  <YAxis
+                    type="category"
+                    dataKey="label"
+                    width={148}
+                    stroke="#74695f"
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    formatter={(value) => formatMetricValue(Number(value ?? 0), "currency")}
+                    contentStyle={getTooltipStyle()}
+                  />
+                  <Bar dataKey="revenue" fill="#2e5a4c" radius={[0, 10, 10, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartFrame>
+          </div>
+        </Panel>
+
+        <Panel eyebrow="Curva ABC" title="Composicao da Curva ABC">
+          <div className="grid gap-3">
+            {view.abcSeries.length ? (
+              view.abcSeries.map((item, index) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--ink)]">
+                          {item.label}
+                        </p>
+                        <p className="text-xs text-[var(--muted)]">
+                          {item.products.toLocaleString("pt-BR")} produtos
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-[var(--forest)]">
+                        {formatMetricValue(item.revenue, "currency")}
+                      </p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {formatMetricValue(item.share, "percent")} do faturamento
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+                    <span>{item.quantity.toLocaleString("pt-BR")} unidades</span>
+                    <span>{item.products.toLocaleString("pt-BR")} itens</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-dashed border-[var(--line)] px-4 py-6 text-sm text-[var(--muted)]">
+                Nao ha dados suficientes de Curva ABC para o filtro atual.
+              </div>
+            )}
+          </div>
+        </Panel>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-2">
+        <Panel eyebrow="Top 20" title="Itens mais vendidos">
+          <RankedList items={view.topProducts} valueLabel="unidades" />
+        </Panel>
+
+        <Panel eyebrow="Bottom 20" title="Itens menos vendidos">
+          <RankedList
+            items={view.lowProducts}
+            valueLabel="unidades"
+            emptyLabel="Nao ha itens suficientes para montar o ranking de menor saida."
+          />
+        </Panel>
+      </section>
+    </div>
+  );
+}
