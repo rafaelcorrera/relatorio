@@ -9,6 +9,12 @@ import type {
 } from "openai/resources/responses/responses";
 
 import {
+  aggregateProductCurve,
+  buildProductKey,
+  buildProductLookup,
+  resolveProductLookup,
+} from "@/lib/product-curve";
+import {
   buildDeliveriesView,
   buildMesaView,
   buildProductsView,
@@ -34,6 +40,22 @@ export interface AssistantAnswer {
   model: string;
 }
 
+export interface ExecutiveInsightCard {
+  title: string;
+  body: string;
+  tone: "accent" | "forest" | "gold";
+}
+
+export interface ExecutiveInsightResult {
+  status: "ai" | "fallback" | "unavailable";
+  headline: string;
+  summary: string;
+  cards: ExecutiveInsightCard[];
+  providerLabel: string;
+  model: string | null;
+  generatedAt: string;
+}
+
 type AssistantToolName =
   | "get_period_context"
   | "get_sales_overview"
@@ -47,12 +69,40 @@ let openAIClientCacheKey = "";
 
 type AssistantProvider = "openai" | "groq";
 
+const EXECUTIVE_INSIGHT_CACHE_TTL = 1000 * 60 * 30;
+const executiveInsightCache = new Map<
+  string,
+  {
+    expiresAt: number;
+    result: ExecutiveInsightResult;
+  }
+>();
+
 function sortDateKeys(values: string[]) {
   return [...values].sort((a, b) => a.localeCompare(b));
 }
 
 function sumBy<T>(items: T[], selector: (item: T) => number) {
   return items.reduce((total, item) => total + selector(item), 0);
+}
+
+function average(values: number[]) {
+  if (!values.length) {
+    return 0;
+  }
+
+  return sumBy(values, (value) => value) / values.length;
+}
+
+function getLiquidSalesValue<
+  T extends {
+    grossSales: number;
+    discounts: number;
+    serviceFee: number;
+    deliveryFee: number;
+  },
+>(item: T) {
+  return item.grossSales - item.discounts - item.serviceFee - item.deliveryFee;
 }
 
 function uniqueDateKeys(bundle: ParsedBundle) {
@@ -86,6 +136,27 @@ function prettifyToolName(value: string) {
 
 function prettifyChannelLabel(value: string) {
   return value.replace(/_/g, " ").trim() || "Nao informado";
+}
+
+function formatCurrencyText(value: number) {
+  return value.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function formatPercentDelta(value: number | null) {
+  if (value === null || !Number.isFinite(value)) {
+    return "sem base comparativa";
+  }
+
+  const prefix = value > 0 ? "+" : "";
+  return `${prefix}${(value * 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  })}%`;
 }
 
 function normalizeProvider(value: string | undefined): AssistantProvider | null {
@@ -174,6 +245,321 @@ function requireOpenAIClient() {
   }
 
   return openAIClient;
+}
+
+function getMonthSortKey(bundle: ParsedBundle) {
+  return `${bundle.year}-${String(bundle.month).padStart(2, "0")}`;
+}
+
+function sortBundlesByPeriod(bundles: ParsedBundle[]) {
+  return [...bundles].sort((left, right) => {
+    if (left.year !== right.year) {
+      return left.year - right.year;
+    }
+
+    if (left.month !== right.month) {
+      return left.month - right.month;
+    }
+
+    return left.uploadedAt.localeCompare(right.uploadedAt);
+  });
+}
+
+function calculateBundleTotals(bundle: ParsedBundle) {
+  const grossSales = sumBy(bundle.performance, (item) => item.grossSales);
+  const netSales = sumBy(bundle.performance, (item) => getLiquidSalesValue(item));
+  const orders = sumBy(bundle.performance, (item) => item.orders) || bundle.orders.length;
+  const customers =
+    sumBy(bundle.performance, (item) => item.customers) ||
+    sumBy(bundle.orders, (item) => item.customerCount);
+  const averageTicket = customers > 0 ? netSales / customers : 0;
+
+  return {
+    grossSales,
+    netSales,
+    orders,
+    customers,
+    averageTicket,
+  };
+}
+
+function calculateDelta(current: number, reference: number) {
+  if (!reference) {
+    return null;
+  }
+
+  return (current - reference) / reference;
+}
+
+function buildLowSellerCandidates(
+  bundle: ParsedBundle,
+  historicalBundles: ParsedBundle[],
+) {
+  const curveLookup = buildProductLookup(aggregateProductCurve(bundle.productCurve));
+  const historyMap = new Map<
+    string,
+    {
+      totalQuantity: number;
+      monthsWithSales: number;
+      totalRevenue: number;
+    }
+  >();
+
+  for (const historicalBundle of historicalBundles) {
+    const historicalCurveLookup = buildProductLookup(
+      aggregateProductCurve(historicalBundle.productCurve),
+    );
+
+    for (const item of historicalBundle.productSales) {
+      const key = buildProductKey(item.category, item.product);
+      const curve = resolveProductLookup(
+        historicalCurveLookup,
+        item.category,
+        item.product,
+      ).item;
+      const historicalRevenue =
+        curve?.totalRevenue ?? (curve?.averagePrice ?? 0) * item.totalQuantity;
+      const current = historyMap.get(key) || {
+        totalQuantity: 0,
+        monthsWithSales: 0,
+        totalRevenue: 0,
+      };
+      current.totalQuantity += item.totalQuantity;
+      current.monthsWithSales += 1;
+      current.totalRevenue += historicalRevenue;
+      historyMap.set(key, current);
+    }
+  }
+
+  return bundle.productSales
+    .filter((item) => item.totalQuantity > 0)
+    .filter((item) => item.category.trim().toUpperCase() !== "EXTRAS")
+    .map((item) => {
+      const key = buildProductKey(item.category, item.product);
+      const curve = resolveProductLookup(curveLookup, item.category, item.product).item;
+      const history = historyMap.get(key);
+      const revenue =
+        curve?.totalRevenue ?? (curve?.averagePrice ?? 0) * item.totalQuantity;
+
+      return {
+        product: item.product,
+        category: item.category,
+        currentQuantity: item.totalQuantity,
+        currentRevenue: revenue,
+        abcClass: curve?.abcClass || "Sem classe",
+        totalQuantityHistory: history?.totalQuantity || item.totalQuantity,
+        monthsWithSales: history?.monthsWithSales || 1,
+        totalRevenueHistory: history?.totalRevenue || revenue,
+      };
+    })
+    .sort((left, right) => {
+      if (left.currentQuantity !== right.currentQuantity) {
+        return left.currentQuantity - right.currentQuantity;
+      }
+
+      if (left.totalQuantityHistory !== right.totalQuantityHistory) {
+        return left.totalQuantityHistory - right.totalQuantityHistory;
+      }
+
+      return left.currentRevenue - right.currentRevenue;
+    })
+    .slice(0, 8);
+}
+
+function buildExecutiveInsightSummary(
+  bundle: ParsedBundle,
+  historicalBundles: ParsedBundle[],
+  storeName: string,
+) {
+  const sortedBundles = sortBundlesByPeriod(
+    historicalBundles.filter(
+      (item) => item.restaurantCode === bundle.restaurantCode,
+    ),
+  );
+  const currentTotals = calculateBundleTotals(bundle);
+  const previousBundles = sortedBundles.filter(
+    (item) => item.periodKey !== bundle.periodKey && getMonthSortKey(item) < getMonthSortKey(bundle),
+  );
+  const comparisonBundles = sortedBundles.filter((item) => item.periodKey !== bundle.periodKey);
+  const previousBundle = previousBundles[previousBundles.length - 1] || null;
+  const previousTotals = previousBundle ? calculateBundleTotals(previousBundle) : null;
+  const comparisonTotals = comparisonBundles.map((item) => ({
+    periodLabel: item.periodLabel,
+    ...calculateBundleTotals(item),
+  }));
+  const averageNetSales = average(comparisonTotals.map((item) => item.netSales));
+  const averageOrders = average(comparisonTotals.map((item) => item.orders));
+  const rankedByNetSales = [...sortedBundles]
+    .map((item) => ({
+      periodLabel: item.periodLabel,
+      ...calculateBundleTotals(item),
+    }))
+    .sort((left, right) => right.netSales - left.netSales);
+  const rankPosition = rankedByNetSales.findIndex(
+    (item) => item.periodLabel === bundle.periodLabel,
+  );
+  const productsView = buildProductsView(bundle);
+
+  return {
+    storeName,
+    period: {
+      restaurantCode: bundle.restaurantCode,
+      periodLabel: bundle.periodLabel,
+      periodKey: bundle.periodKey,
+      loadedPeriods: sortedBundles.map((item) => item.periodLabel),
+      loadedHistoryCount: sortedBundles.length,
+      rankByNetSales:
+        rankPosition >= 0 ? `${rankPosition + 1} de ${rankedByNetSales.length}` : null,
+    },
+    currentMonth: currentTotals,
+    comparisons: {
+      previousMonth: previousBundle
+        ? {
+            periodLabel: previousBundle.periodLabel,
+            netSales: previousTotals?.netSales || 0,
+            orders: previousTotals?.orders || 0,
+            deltaNetSales: previousTotals
+              ? calculateDelta(currentTotals.netSales, previousTotals.netSales)
+              : null,
+            deltaOrders: previousTotals
+              ? calculateDelta(currentTotals.orders, previousTotals.orders)
+              : null,
+          }
+        : null,
+      historyAverage: comparisonTotals.length
+        ? {
+            netSales: averageNetSales,
+            orders: averageOrders,
+            deltaNetSales: calculateDelta(currentTotals.netSales, averageNetSales),
+            deltaOrders: calculateDelta(currentTotals.orders, averageOrders),
+          }
+        : null,
+      bestMonth: rankedByNetSales[0]
+        ? {
+            periodLabel: rankedByNetSales[0].periodLabel,
+            netSales: rankedByNetSales[0].netSales,
+          }
+        : null,
+      worstMonth: rankedByNetSales[rankedByNetSales.length - 1]
+        ? {
+            periodLabel: rankedByNetSales[rankedByNetSales.length - 1].periodLabel,
+            netSales: rankedByNetSales[rankedByNetSales.length - 1].netSales,
+          }
+        : null,
+    },
+    currentTopProducts: productsView.topProducts.slice(0, 5).map((item) => ({
+      product: item.label,
+      quantity: item.value,
+      category: item.helper || null,
+    })),
+    lowSellerCandidates: buildLowSellerCandidates(bundle, sortedBundles),
+  };
+}
+
+function createFallbackExecutiveInsight(
+  bundle: ParsedBundle,
+  historicalBundles: ParsedBundle[],
+): ExecutiveInsightResult {
+  const summary = buildExecutiveInsightSummary(bundle, historicalBundles, bundle.restaurantCode);
+  const averageComparison = summary.comparisons.historyAverage;
+  const previousComparison = summary.comparisons.previousMonth;
+  const lowProducts = summary.lowSellerCandidates.slice(0, 3);
+  const revenueSentence = averageComparison
+    ? `${summary.period.periodLabel} fechou com ${formatCurrencyText(summary.currentMonth.netSales)} de venda liquida, ${formatPercentDelta(averageComparison.deltaNetSales)} em relacao a media dos periodos carregados.`
+    : `${summary.period.periodLabel} fechou com ${formatCurrencyText(summary.currentMonth.netSales)} de venda liquida. Ainda nao ha historico suficiente para comparar o desempenho.`;
+  const previousSentence = previousComparison
+    ? `${summary.period.periodLabel} ficou ${formatPercentDelta(previousComparison.deltaNetSales)} versus ${previousComparison.periodLabel}.`
+    : "Nao ha um mes anterior carregado para comparar a variacao imediata.";
+  const productSentence = lowProducts.length
+    ? `${lowProducts.map((item) => item.product).join(", ")} aparecem entre os itens de menor saida do periodo e merecem revisao de cardapio, precificacao ou substituicao por novidades.`
+    : "Nao ha produtos com baixa saida suficientes para sugerir revisao de menu neste momento.";
+
+  return {
+    status: "fallback",
+    headline: "Leitura executiva do período",
+    summary: `${revenueSentence} ${previousSentence}`,
+    cards: [
+      {
+        title: "Receita do mês",
+        body: revenueSentence,
+        tone: "forest",
+      },
+      {
+        title: "Produtos com baixa saída",
+        body: productSentence,
+        tone: "accent",
+      },
+      {
+        title: "Próximo movimento",
+        body:
+          "Cruze os itens de baixa saida com margem, apresentacao e aderencia ao menu para testar substituicoes pontuais no proximo ciclo, sem mexer nos campeoes de venda.",
+        tone: "gold",
+      },
+    ],
+    providerLabel: getAssistantProviderLabel(),
+    model: null,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+function parseExecutiveInsightPayload(value: string) {
+  const start = value.indexOf("{");
+  const end = value.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value.slice(start, end + 1)) as {
+      headline?: unknown;
+      summary?: unknown;
+      cards?: unknown;
+    };
+    const headline =
+      typeof parsed.headline === "string" ? parsed.headline.trim() : "";
+    const summary =
+      typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+    const cards = Array.isArray(parsed.cards)
+      ? parsed.cards
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+
+            const title =
+              typeof item.title === "string" ? item.title.trim() : "";
+            const body = typeof item.body === "string" ? item.body.trim() : "";
+            const tone =
+              item.tone === "accent" || item.tone === "forest" || item.tone === "gold"
+                ? item.tone
+                : "accent";
+
+            if (!title || !body) {
+              return null;
+            }
+
+            return {
+              title: title.slice(0, 80),
+              body: body.slice(0, 420),
+              tone,
+            } satisfies ExecutiveInsightCard;
+          })
+          .filter(Boolean) as ExecutiveInsightCard[]
+      : [];
+
+    if (!headline || !summary || !cards.length) {
+      return null;
+    }
+
+    return {
+      headline: headline.slice(0, 120),
+      summary: summary.slice(0, 420),
+      cards: cards.slice(0, 3),
+    };
+  } catch {
+    return null;
+  }
 }
 
 function serializeMetrics(
@@ -748,6 +1134,105 @@ function extractFunctionCalls(response: { output: ResponseInputItem[] }) {
   return response.output.filter(
     (item): item is ResponseFunctionToolCall => item.type === "function_call",
   );
+}
+
+export async function generateExecutiveInsight({
+  bundle,
+  historicalBundles,
+  storeName,
+}: {
+  bundle: ParsedBundle;
+  historicalBundles: ParsedBundle[];
+  storeName: string;
+}): Promise<ExecutiveInsightResult> {
+  const providerLabel = getAssistantProviderLabel();
+  const cacheKey = [
+    getAssistantProvider(),
+    getAssistantModel(),
+    bundle.periodKey,
+    bundle.uploadedAt,
+    historicalBundles
+      .map((item) => `${item.periodKey}:${item.uploadedAt}`)
+      .sort()
+      .join("|"),
+  ].join("::");
+  const cached = executiveInsightCache.get(cacheKey);
+
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.result;
+  }
+
+  if (!isAssistantConfigured()) {
+    return {
+      ...createFallbackExecutiveInsight(bundle, historicalBundles),
+      status: "unavailable",
+      summary:
+        "A IA nao esta configurada neste ambiente. Exibindo uma leitura automatica do periodo enquanto a chave do provedor nao e ativada.",
+    };
+  }
+
+  const fallback = createFallbackExecutiveInsight(bundle, historicalBundles);
+  const summaryPayload = buildExecutiveInsightSummary(
+    bundle,
+    historicalBundles,
+    storeName,
+  );
+
+  try {
+    const client = requireOpenAIClient();
+    const model = getAssistantModel();
+    const response = await client.responses.create({
+      model,
+      temperature: 0.2,
+      max_output_tokens: 700,
+      input: [
+        {
+          role: "system",
+          content: [
+            {
+              type: "input_text",
+              text:
+                "Voce e um estrategista de performance para restaurantes. Responda sempre em portugues do Brasil, use somente os dados fornecidos e nunca invente numeros. Gere uma leitura executiva para aparecer no topo de um dashboard. Avalie o faturamento do mes versus o historico carregado, destaque produtos de baixa saida que podem ser revisados, substituidos ou reformulados e proponha um proximo movimento objetivo. Nao afirme que um item deve ser removido sem ressalva; use linguagem de recomendacao. Retorne JSON puro no formato {\"headline\":\"...\",\"summary\":\"...\",\"cards\":[{\"title\":\"...\",\"body\":\"...\",\"tone\":\"accent|forest|gold\"},{...},{...}]}. Crie exatamente 3 cards e mantenha cada body com no maximo 320 caracteres.",
+            },
+          ],
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: JSON.stringify(summaryPayload),
+            },
+          ],
+        },
+      ],
+    });
+
+    const parsed = parseExecutiveInsightPayload(response.output_text);
+
+    if (!parsed) {
+      return fallback;
+    }
+
+    const result: ExecutiveInsightResult = {
+      status: "ai",
+      headline: parsed.headline,
+      summary: parsed.summary,
+      cards: parsed.cards,
+      providerLabel,
+      model,
+      generatedAt: new Date().toISOString(),
+    };
+
+    executiveInsightCache.set(cacheKey, {
+      expiresAt: Date.now() + EXECUTIVE_INSIGHT_CACHE_TTL,
+      result,
+    });
+
+    return result;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function generateAssistantAnswer({

@@ -5,7 +5,11 @@ import { useState, useTransition } from "react";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-export function GoogleLoginButton() {
+export function GoogleLoginButton({
+  storeSlug,
+}: {
+  storeSlug?: string;
+}) {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -15,11 +19,14 @@ export function GoogleLoginButton() {
 
       try {
         const supabase = createSupabaseBrowserClient();
-        const redirectTo = `${window.location.origin}/auth/callback`;
+        const redirectUrl = new URL("/auth/callback", window.location.origin);
+        if (storeSlug) {
+          redirectUrl.searchParams.set("store", storeSlug);
+        }
         const { data, error: authError } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: {
-            redirectTo,
+            redirectTo: redirectUrl.toString(),
             queryParams: {
               prompt: "select_account",
             },
@@ -57,7 +64,7 @@ export function GoogleLoginButton() {
       </button>
 
       {error ? (
-        <p className="rounded-[24px] border border-[color:rgba(159,35,68,0.18)] bg-[color:rgba(159,35,68,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
+        <p className="premium-alert rounded-[24px] px-4 py-3 text-sm">
           {error}
         </p>
       ) : null}

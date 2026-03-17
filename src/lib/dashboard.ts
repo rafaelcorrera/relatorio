@@ -19,6 +19,17 @@ function sumBy<T>(items: T[], selector: (item: T) => number) {
   return items.reduce((total, item) => total + selector(item), 0);
 }
 
+function getLiquidSalesValue<
+  T extends {
+    grossSales: number;
+    discounts: number;
+    serviceFee: number;
+    deliveryFee: number;
+  },
+>(item: T) {
+  return item.grossSales - item.discounts - item.serviceFee - item.deliveryFee;
+}
+
 function averageOf(items: number[]) {
   const valid = items.filter((item) => item > 0);
   if (!valid.length) {
@@ -80,7 +91,9 @@ function buildReportStatus(bundle: ParsedBundle): CoverageStatus[] {
 
 export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot {
   const totalGrossRevenue = sumBy(bundle.performance, (item) => item.grossSales);
-  const totalFinalRevenue = sumBy(bundle.performance, (item) => item.finalNetSales);
+  const totalNetRevenue = sumBy(bundle.performance, (item) =>
+    getLiquidSalesValue(item),
+  );
   const totalOrders =
     sumBy(bundle.performance, (item) => item.orders) || bundle.orders.length;
   const totalCustomers =
@@ -88,7 +101,7 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
     sumBy(bundle.orders, (item) => item.customerCount);
   const serviceFeeTotal = sumBy(bundle.performance, (item) => item.serviceFee);
   const deliveryFeeTotal = sumBy(bundle.performance, (item) => item.deliveryFee);
-  const averageFinalTicket = totalCustomers > 0 ? totalFinalRevenue / totalCustomers : 0;
+  const averageNetTicket = totalCustomers > 0 ? totalNetRevenue / totalCustomers : 0;
 
   const mesaOrders = bundle.orders.filter((item) => item.primaryChannel === "Mesa");
   const deliveryOrders = bundle.orders.filter(
@@ -105,7 +118,7 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
 
   const dailyRevenue = bundle.performance.map((day) => ({
     label: day.dateLabel,
-    revenue: day.finalNetSales,
+    revenue: getLiquidSalesValue(day),
     grossRevenue: day.grossSales,
     orders: day.orders,
   }));
@@ -252,7 +265,7 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
   const bestHour = [...hourlyDemand].sort((a, b) => b.orders - a.orders)[0];
   const dominantChannel = channelMix[0];
   const bestDay = [...bundle.performance].sort(
-    (a, b) => b.finalNetSales - a.finalNetSales,
+    (a, b) => getLiquidSalesValue(b) - getLiquidSalesValue(a),
   )[0];
   const topNeighborhood = neighborhoods[0];
 
@@ -260,7 +273,7 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
   for (const day of bundle.performance) {
     const weekdayIndex = new Date(`${day.dateKey}T12:00:00`).getDay();
     const label = WEEKDAY_NAMES[weekdayIndex];
-    weekdayTotals.set(label, (weekdayTotals.get(label) || 0) + day.finalNetSales);
+    weekdayTotals.set(label, (weekdayTotals.get(label) || 0) + getLiquidSalesValue(day));
   }
   const bestWeekday = [...weekdayTotals.entries()].sort((a, b) => b[1] - a[1])[0];
 
@@ -277,8 +290,8 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
     },
     metrics: [
       {
-        label: "Faturamento Liquido Final",
-        value: totalFinalRevenue,
+        label: "Venda Liquida",
+        value: totalNetRevenue,
         format: "currency",
         helper: `Bruto do periodo: R$ ${totalGrossRevenue.toLocaleString("pt-BR", {
           minimumFractionDigits: 2,
@@ -297,14 +310,14 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
         label: "Clientes",
         value: totalCustomers,
         format: "number",
-        helper: "Base para ticket medio final do periodo",
+        helper: "Base para ticket medio liquido do periodo",
         accent: "gold",
       },
       {
-        label: "Ticket Medio Final",
-        value: averageFinalTicket,
+        label: "Ticket Medio Liquido",
+        value: averageNetTicket,
         format: "currency",
-        helper: "Venda liquida final dividida por clientes",
+        helper: "Venda liquida dividida por clientes",
         accent: "terracotta",
       },
       {
@@ -353,10 +366,10 @@ export function buildDashboardSnapshot(bundle: ParsedBundle): DashboardSnapshot 
         label: "Melhor dia",
         value: bestDay ? bestDay.dateLabel : "Sem dados",
         helper: bestDay
-          ? `R$ ${bestDay.finalNetSales.toLocaleString("pt-BR", {
+          ? `R$ ${getLiquidSalesValue(bestDay).toLocaleString("pt-BR", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })} de venda liquida final`
+            })} de venda liquida`
           : "Importe performance da loja",
       },
       {

@@ -58,14 +58,14 @@ export function MesaReportView({
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#b6432c"
+                    stroke="var(--chart-1)"
                     strokeWidth={3}
-                    dot={{ r: 3, fill: "#b6432c" }}
+                    dot={{ r: 3, fill: "var(--chart-1)" }}
                   />
                   <Line
                     type="monotone"
                     dataKey="averageTicket"
-                    stroke="#2e5a4c"
+                    stroke="var(--chart-2)"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -91,7 +91,7 @@ export function MesaReportView({
                     }
                     contentStyle={getTooltipStyle()}
                   />
-                  <Bar dataKey="orders" fill="#d29b42" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="orders" fill="var(--chart-3)" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartFrame>
@@ -123,7 +123,7 @@ export function MesaReportView({
                     }
                     contentStyle={getTooltipStyle()}
                   />
-                  <Bar dataKey="orders" fill="#2e5a4c" radius={[0, 10, 10, 0]} />
+                  <Bar dataKey="orders" fill="var(--chart-2)" radius={[0, 10, 10, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartFrame>

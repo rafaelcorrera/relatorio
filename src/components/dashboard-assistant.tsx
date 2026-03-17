@@ -58,12 +58,14 @@ export function DashboardAssistant({
   restaurantCode,
   currentSection,
   enabled,
+  storeName,
 }: {
   bundleKey: string;
   periodLabel: string;
   restaurantCode: string;
   currentSection: AssistantSection;
   enabled: boolean;
+  storeName: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<LocalMessage[]>([
@@ -179,10 +181,8 @@ export function DashboardAssistant({
       {isOpen ? (
         <section
           id="dashboard-assistant-panel"
-          className="relative w-[min(450px,calc(100vw-1.5rem))] overflow-hidden rounded-[32px] border border-[rgba(255,227,188,0.12)] bg-[linear-gradient(145deg,rgba(26,9,14,0.98),rgba(83,23,40,0.98)_54%,rgba(34,10,19,0.99))] text-white shadow-[0_30px_90px_rgba(39,10,19,0.4)]"
+          className="brand-assistant-panel relative w-[min(450px,calc(100vw-1.5rem))] overflow-hidden rounded-[32px] text-white"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,228,184,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(203,154,72,0.14),transparent_16%)]" />
-
           <div className="relative p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -194,7 +194,7 @@ export function DashboardAssistant({
                   Faça uma pergunta
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-white/72">
-                  {restaurantCode} • {periodLabel}
+                  {storeName} • {restaurantCode} • {periodLabel}
                 </p>
               </div>
 
@@ -261,7 +261,7 @@ export function DashboardAssistant({
                       type="button"
                       onClick={() => void submitQuestion(suggestion)}
                       disabled={isPending}
-                      className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-left text-xs text-white/82 transition hover:border-[#f5bb8d] hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-left text-xs text-white/82 transition hover:border-[rgb(var(--accent-rgb)/0.44)] hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {suggestion}
                     </button>
@@ -277,7 +277,7 @@ export function DashboardAssistant({
                       onKeyDown={handleKeyDown}
                       rows={4}
                       placeholder="Ex.: Em qual horario o delivery mais vendeu e qual foi o ticket medio?"
-                      className="min-h-28 rounded-[24px] border border-white/12 bg-[rgba(255,255,255,0.08)] px-4 py-4 text-sm text-white outline-none transition placeholder:text-white/38 focus:border-[#f5bb8d] focus:bg-[rgba(255,255,255,0.1)]"
+                      className="min-h-28 rounded-[24px] border border-white/12 bg-[rgba(255,255,255,0.08)] px-4 py-4 text-sm text-white outline-none transition placeholder:text-white/38 focus:border-[rgb(var(--accent-rgb)/0.44)] focus:bg-[rgba(255,255,255,0.1)]"
                     />
                   </label>
 
@@ -285,7 +285,7 @@ export function DashboardAssistant({
                     <button
                       type="submit"
                       disabled={isPending || !question.trim()}
-                      className="inline-flex items-center gap-2 rounded-full border border-[#f4d4b6]/20 bg-[linear-gradient(135deg,#f3c195,#cb9a48)] px-5 py-3 text-sm font-semibold text-[#4f1528] shadow-[0_18px_36px_rgba(203,154,72,0.18)] transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-[linear-gradient(135deg,var(--brand-icon-start),var(--brand-icon-mid))] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_36px_rgb(var(--hero-shadow-rgb)/0.22)] transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isPending ? (
                         <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -309,7 +309,13 @@ export function DashboardAssistant({
             )}
 
             {error ? (
-              <div className="mt-4 rounded-[24px] border border-[#d58e80]/40 bg-[rgba(120,25,36,0.34)] px-4 py-3 text-sm text-[#ffe1d5]">
+              <div
+                className="mt-4 rounded-[24px] px-4 py-3 text-sm text-[#ffe1d5]"
+                style={{
+                  border: "1px solid rgb(var(--accent-rgb) / 0.34)",
+                  backgroundColor: "rgb(var(--accent-rgb) / 0.18)",
+                }}
+              >
                 {error}
               </div>
             ) : null}
@@ -323,14 +329,13 @@ export function DashboardAssistant({
         aria-controls="dashboard-assistant-panel"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Fechar assistente IA" : "Abrir assistente IA"}
-        className="group relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(255,227,188,0.14)] bg-[linear-gradient(135deg,rgba(26,9,14,0.98),rgba(83,23,40,0.98))] text-white shadow-[0_24px_70px_rgba(39,10,19,0.4)] transition hover:-translate-y-1 hover:brightness-110"
+        className="brand-assistant-panel group relative inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-full text-white transition hover:-translate-y-1 hover:brightness-110"
       >
-        <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top_left,rgba(255,228,184,0.2),transparent_30%)]" />
         <Bot className="relative h-7 w-7" />
-        <span className="absolute -left-1 -top-1 inline-flex min-w-7 items-center justify-center rounded-full border border-[#f3c195]/30 bg-[#f3c195] px-1.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5a1831]">
+        <span className="absolute -left-1 -top-1 inline-flex min-w-7 items-center justify-center rounded-full border border-white/20 bg-[linear-gradient(135deg,var(--brand-icon-start),var(--brand-icon-mid))] px-1.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
           IA
         </span>
-        <span className="pointer-events-none absolute right-[calc(100%+12px)] hidden rounded-full border border-[#7a3652] bg-[rgba(57,10,26,0.96)] px-3 py-2 text-xs font-medium text-white/88 shadow-[0_12px_30px_rgba(68,8,28,0.24)] md:block">
+        <span className="pointer-events-none absolute right-[calc(100%+12px)] hidden rounded-full border border-white/10 bg-[rgba(17,9,12,0.86)] px-3 py-2 text-xs font-medium text-white/88 shadow-[0_12px_30px_rgb(var(--hero-shadow-rgb)/0.24)] md:block">
           Assistente IA
         </span>
       </button>

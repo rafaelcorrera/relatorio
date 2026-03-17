@@ -31,7 +31,7 @@ export function RevenueReportView({
       <MetricGrid metrics={view.metrics} />
 
       <section className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
-        <Panel eyebrow="Receita" title="Faturamento bruto x venda liquida final">
+        <Panel eyebrow="Receita" title="Faturamento bruto x venda liquida">
           <div className="h-[320px]">
             <ChartFrame>
               <ResponsiveContainer width="100%" height="100%">
@@ -51,16 +51,16 @@ export function RevenueReportView({
                   <Line
                     type="monotone"
                     dataKey="gross"
-                    stroke="#b6432c"
+                    stroke="var(--chart-1)"
                     strokeWidth={3}
-                    dot={{ r: 3, fill: "#b6432c" }}
+                    dot={{ r: 3, fill: "var(--chart-1)" }}
                   />
                   <Line
                     type="monotone"
-                    dataKey="final"
-                    stroke="#2e5a4c"
+                    dataKey="net"
+                    stroke="var(--chart-2)"
                     strokeWidth={3}
-                    dot={{ r: 3, fill: "#2e5a4c" }}
+                    dot={{ r: 3, fill: "var(--chart-2)" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -85,9 +85,9 @@ export function RevenueReportView({
                     formatter={(value) => formatMetricValue(Number(value ?? 0), "currency")}
                     contentStyle={getTooltipStyle()}
                   />
-                  <Bar dataKey="discounts" fill="#b6432c" radius={[10, 10, 0, 0]} />
-                  <Bar dataKey="serviceFee" fill="#d29b42" radius={[10, 10, 0, 0]} />
-                  <Bar dataKey="deliveryFee" fill="#2e5a4c" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="discounts" fill="var(--chart-1)" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="serviceFee" fill="var(--chart-3)" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="deliveryFee" fill="var(--chart-2)" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartFrame>
@@ -103,7 +103,7 @@ export function RevenueReportView({
                 <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
                   <th className="px-3">Dia</th>
                   <th className="px-3">Bruto</th>
-                  <th className="px-3">Liquido final</th>
+                  <th className="px-3">Venda liquida</th>
                   <th className="px-3">Descontos</th>
                   <th className="px-3">Pedidos</th>
                 </tr>
@@ -113,7 +113,7 @@ export function RevenueReportView({
                   <tr key={row.label} className="rounded-2xl bg-[var(--panel-soft)] text-sm text-[var(--ink)]">
                     <td className="rounded-l-2xl px-3 py-3 font-semibold">{row.label}</td>
                     <td className="px-3 py-3">{formatMetricValue(row.gross, "currency")}</td>
-                    <td className="px-3 py-3">{formatMetricValue(row.final, "currency")}</td>
+                    <td className="px-3 py-3">{formatMetricValue(row.net, "currency")}</td>
                     <td className="px-3 py-3">{formatMetricValue(row.discounts, "currency")}</td>
                     <td className="rounded-r-2xl px-3 py-3">{row.orders.toLocaleString("pt-BR")}</td>
                   </tr>

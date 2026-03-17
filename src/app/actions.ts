@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { createSession, destroySession, getAuthConfig, requireSession } from "@/lib/auth";
 import { upsertBundleFromFiles } from "@/lib/report-store";
+import { getStoreByRestaurantCode, resolveStore } from "@/lib/stores";
 
 export interface FormState {
   error: string;
@@ -46,7 +47,8 @@ export async function loginAction(
   redirect("/dashboard");
 }
 
-export async function logoutAction() {
+export async function logoutAction(formData?: FormData) {
+  void formData;
   await destroySession();
   redirect("/login");
 }
@@ -61,6 +63,7 @@ export async function uploadReportsAction(
   const rawFiles = formData
     .getAll("reports")
     .filter((value): value is File => value instanceof File);
+  const requestedStoreSlug = String(formData.get("store") ?? "").trim();
 
   if (!rawFiles.length) {
     return {
@@ -70,8 +73,12 @@ export async function uploadReportsAction(
 
   try {
     const bundle = await upsertBundleFromFiles(rawFiles);
+    const store =
+      getStoreByRestaurantCode(bundle.restaurantCode) ||
+      resolveStore(requestedStoreSlug);
     revalidatePath("/dashboard");
-    redirect(`/dashboard?bundle=${bundle.periodKey}`);
+    revalidatePath("/login");
+    redirect(`/dashboard?store=${store.slug}&bundle=${bundle.periodKey}`);
   } catch (error) {
     return {
       error:

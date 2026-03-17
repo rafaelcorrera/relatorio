@@ -12,13 +12,18 @@ export default async function DeliveriesPage({
 }: {
   searchParams: Promise<{
     bundle?: string;
+    store?: string;
     start?: string;
     end?: string;
     volumeDay?: string;
   }>;
 }) {
   const params = await searchParams;
-  const { session, bundles, selectedBundle } = await loadDashboardContext(params.bundle);
+  const { session, bundles, selectedBundle, selectedStore, bundleCountsByStore } =
+    await loadDashboardContext({
+      periodKey: params.bundle,
+      storeSlug: params.store,
+    });
   const restaurantBundles = selectedBundle
     ? getRestaurantBundles(bundles, selectedBundle.restaurantCode)
     : [];
@@ -46,15 +51,18 @@ export default async function DeliveriesPage({
   return (
     <DashboardShell
       currentSection="entregas"
-      title="Entregas por canal, horario e operacao"
-      description="Aqui ficam as leituras de delivery: volume entregue, canais de pedido, bairros, modos operacionais e horarios de maior concentracao. O topo filtra por data inicial e final, enquanto o quadro de hora a hora permite aprofundar um dia especifico."
+      title="Entregas por canal, horário e operação"
+      description="Aqui ficam as leituras de delivery: volume entregue, canais de pedido, bairros, modos operacionais e horários de maior concentração. O topo filtra por data inicial e final, enquanto o quadro de hora a hora permite aprofundar um dia específico."
       pathname="/dashboard/entregas"
       bundles={bundles}
       selectedBundle={selectedBundle}
+      selectedStore={selectedStore}
+      bundleCountsByStore={bundleCountsByStore}
       sessionEmail={session.email}
       filters={
         selectedBundle && view ? (
           <form method="GET" className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]">
+            <input type="hidden" name="store" value={selectedStore.slug} />
             <input type="hidden" name="bundle" value={selectedBundle.periodKey} />
             <input
               type="hidden"
@@ -90,23 +98,30 @@ export default async function DeliveriesPage({
               Aplicar filtro
             </button>
             <Link
-              href={`/dashboard/entregas?bundle=${selectedBundle.periodKey}`}
+              href={`/dashboard/entregas?store=${selectedStore.slug}&bundle=${selectedBundle.periodKey}`}
               className="premium-button-secondary self-end"
             >
               Limpar
             </Link>
             <p className="md:col-span-4 text-xs leading-6 text-[var(--muted)]">
-              O intervalo pode cruzar meses ja importados. Ao sair do mes atual, a tela consolida os bundles
-              disponiveis e preserva o filtro por dia no quadro hora a hora.
+              O intervalo pode cruzar meses já importados. Ao sair do mês atual, a tela consolida os bundles
+              disponíveis e preserva o filtro por dia no quadro hora a hora.
             </p>
           </form>
         ) : null
       }
     >
       {selectedBundle && view ? (
-        <DeliveriesReportView bundleKey={selectedBundle.periodKey} view={view} />
+        <DeliveriesReportView
+          bundleKey={selectedBundle.periodKey}
+          storeSlug={selectedStore.slug}
+          view={view}
+        />
       ) : (
-        <DashboardEmptyState />
+        <DashboardEmptyState
+          storeSlug={selectedStore.slug}
+          storeName={selectedStore.name}
+        />
       )}
     </DashboardShell>
   );

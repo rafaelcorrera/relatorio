@@ -277,6 +277,15 @@ async function main() {
     );
   }
 
+  if (expectedRestaurantCode) {
+    const normalizedRestaurantCode = expectedRestaurantCode.toUpperCase();
+    groupedFiles = new Map(
+      [...groupedFiles.entries()].filter(([periodKey]) =>
+        periodKey.startsWith(`${normalizedRestaurantCode}-`),
+      ),
+    );
+  }
+
   if (groupedFiles.size === 0) {
     throw new Error("Nenhum periodo compativel foi encontrado para os filtros informados.");
   }

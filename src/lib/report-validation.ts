@@ -330,11 +330,18 @@ export function validateParsedBundle(
     [ExtendedReportKind, ParseDiagnostics["sections"][ExtendedReportKind]]
   >) {
     if (data.duplicatesRemoved > 0) {
+      const severity: ValidationSeverity =
+        section === "performance" ? "warning" : "error";
+      const message =
+        section === "performance"
+          ? "A importacao consolidou linhas repetidas em performance e manteve a ultima leitura de cada dia."
+          : `A importacao removeu duplicidades em ${section}.`;
+
       issues.push(
         createIssue(
           `${section}_duplicates_removed`,
-          "error",
-          `A importacao removeu duplicidades em ${section}.`,
+          severity,
+          message,
           {
             duplicatesRemoved: data.duplicatesRemoved,
           },

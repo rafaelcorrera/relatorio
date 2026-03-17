@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isEmailAllowed } from "@/lib/auth-allowlist";
+import { createManagedSession } from "@/lib/auth";
 import { isSupabaseAuthEnabled } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -41,5 +42,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  await createManagedSession(email);
+
+  const dashboardUrl = new URL("/dashboard", request.url);
+  return NextResponse.redirect(dashboardUrl);
 }

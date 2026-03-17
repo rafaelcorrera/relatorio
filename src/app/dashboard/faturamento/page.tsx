@@ -12,12 +12,17 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{
     bundle?: string;
+    store?: string;
     start?: string;
     end?: string;
   }>;
 }) {
   const params = await searchParams;
-  const { session, bundles, selectedBundle } = await loadDashboardContext(params.bundle);
+  const { session, bundles, selectedBundle, selectedStore, bundleCountsByStore } =
+    await loadDashboardContext({
+      periodKey: params.bundle,
+      storeSlug: params.store,
+    });
   const restaurantBundles = selectedBundle
     ? getRestaurantBundles(bundles, selectedBundle.restaurantCode)
     : [];
@@ -44,15 +49,18 @@ export default async function BillingPage({
   return (
     <DashboardShell
       currentSection="faturamento"
-      title="Faturamento, taxas e leitura financeira do periodo"
-      description="Esta pagina concentra os numeros consolidados de receita, descontos, servico e entrega. O filtro por data trabalha sobre o relatorio diario de performance da loja."
+      title="Faturamento, taxas e leitura financeira do período"
+      description="Esta página concentra os números consolidados de receita, descontos, serviço e entrega. O filtro por data trabalha sobre o relatório diário de performance da loja."
       pathname="/dashboard/faturamento"
       bundles={bundles}
       selectedBundle={selectedBundle}
+      selectedStore={selectedStore}
+      bundleCountsByStore={bundleCountsByStore}
       sessionEmail={session.email}
       filters={
         selectedBundle && view ? (
           <form method="GET" className="grid gap-4 md:grid-cols-[1fr_1fr_auto_auto]">
+            <input type="hidden" name="store" value={selectedStore.slug} />
             <input type="hidden" name="bundle" value={selectedBundle.periodKey} />
             <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Data inicial
@@ -83,20 +91,27 @@ export default async function BillingPage({
               Aplicar filtro
             </button>
             <Link
-              href={`/dashboard/faturamento?bundle=${selectedBundle.periodKey}`}
+              href={`/dashboard/faturamento?store=${selectedStore.slug}&bundle=${selectedBundle.periodKey}`}
               className="premium-button-secondary self-end"
             >
               Limpar
             </Link>
             <p className="md:col-span-4 text-xs leading-6 text-[var(--muted)]">
-              O filtro pode atravessar meses ja carregados. Se voce escolher um intervalo como
-              {" "}15/01 ate 03/02, o painel combina automaticamente os bundles disponiveis do restaurante.
+              O filtro pode atravessar meses já carregados. Se você escolher um intervalo como
+              {" "}15/01 até 03/02, o painel combina automaticamente os bundles disponíveis do restaurante.
             </p>
           </form>
         ) : null
       }
     >
-      {selectedBundle && view ? <RevenueReportView view={view} /> : <DashboardEmptyState />}
+      {selectedBundle && view ? (
+        <RevenueReportView view={view} />
+      ) : (
+        <DashboardEmptyState
+          storeSlug={selectedStore.slug}
+          storeName={selectedStore.name}
+        />
+      )}
     </DashboardShell>
   );
 }

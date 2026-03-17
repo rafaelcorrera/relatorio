@@ -1,40 +1,61 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useSyncExternalStore } from "react";
 
 import type { DisplayMetric, RankedEntry } from "@/lib/report-views";
 
 export const CHART_COLORS = [
-  "#9f2344",
-  "#245e54",
-  "#cb9a48",
-  "#5a3042",
-  "#d56f48",
-  "#4f6787",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--plum)",
 ];
 
-const TONE_CLASSNAMES: Record<
+const TONE_STYLES: Record<
   DisplayMetric["tone"],
   {
-    badge: string;
-    value: string;
+    badge: CSSProperties;
+    value: CSSProperties;
   }
 > = {
   accent: {
-    badge: "bg-[color:rgba(159,35,68,0.12)] text-[var(--accent)]",
-    value: "text-[var(--accent)]",
+    badge: {
+      backgroundColor: "rgb(var(--accent-rgb) / 0.12)",
+      color: "var(--accent)",
+    },
+    value: {
+      color: "var(--accent)",
+    },
   },
   forest: {
-    badge: "bg-[color:rgba(36,94,84,0.12)] text-[var(--forest)]",
-    value: "text-[var(--forest)]",
+    badge: {
+      backgroundColor: "color-mix(in srgb, var(--chart-2) 12%, white)",
+      color: "var(--chart-2)",
+    },
+    value: {
+      color: "var(--chart-2)",
+    },
   },
   gold: {
-    badge: "bg-[color:rgba(203,154,72,0.15)] text-[var(--gold)]",
-    value: "text-[var(--gold)]",
+    badge: {
+      backgroundColor: "color-mix(in srgb, var(--chart-3) 14%, white)",
+      color: "var(--chart-3)",
+    },
+    value: {
+      color: "var(--chart-3)",
+    },
   },
   slate: {
-    badge: "bg-[color:rgba(79,103,135,0.12)] text-[#4f6787]",
-    value: "text-[#4f6787]",
+    badge: {
+      backgroundColor: "color-mix(in srgb, var(--chart-4) 12%, white)",
+      color: "var(--chart-4)",
+    },
+    value: {
+      color: "var(--chart-4)",
+    },
   },
 };
 
@@ -112,7 +133,13 @@ export function Panel({
 }) {
   return (
     <section className="premium-surface rounded-[34px] p-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(159,35,68,0.08),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(203,154,72,0.08),transparent_26%)]" />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(circle at top right, rgb(var(--accent-rgb) / 0.08), transparent 24%), radial-gradient(circle at bottom left, color-mix(in srgb, var(--chart-3) 10%, transparent), transparent 26%)",
+        }}
+      />
       <div className="relative mb-6 flex flex-col gap-2">
         {eyebrow ? (
           <span className="premium-pill w-fit bg-[rgba(255,255,255,0.72)] text-[var(--muted)]">
@@ -136,20 +163,30 @@ export function MetricGrid({
   return (
     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {metrics.map((metric) => {
-        const tone = TONE_CLASSNAMES[metric.tone];
+        const tone = TONE_STYLES[metric.tone];
         return (
           <div
             key={metric.label}
             className="premium-surface rounded-[30px] p-5"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(159,35,68,0.06),transparent_20%)]" />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at top right, rgba(255,255,255,0.72), transparent 24%), radial-gradient(circle at bottom left, rgb(var(--accent-rgb) / 0.06), transparent 20%)",
+              }}
+            />
             <div className="relative">
               <span
-                className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}
+                className="inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]"
+                style={tone.badge}
               >
                 {metric.label}
               </span>
-              <p className={`mt-4 text-[2.15rem] font-semibold tracking-[-0.05em] ${tone.value}`}>
+              <p
+                className="mt-4 text-[2.15rem] font-semibold tracking-[-0.05em]"
+                style={tone.value}
+              >
                 {metric.displayValue ??
                   formatMetricValue(metric.value ?? 0, metric.format)}
               </p>

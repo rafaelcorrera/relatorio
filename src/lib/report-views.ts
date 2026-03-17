@@ -43,7 +43,7 @@ export interface RevenueViewData {
   dailySeries: Array<{
     label: string;
     gross: number;
-    final: number;
+    net: number;
     orders: number;
   }>;
   componentsSeries: Array<{
@@ -55,7 +55,7 @@ export interface RevenueViewData {
   tableRows: Array<{
     label: string;
     gross: number;
-    final: number;
+    net: number;
     discounts: number;
     orders: number;
   }>;
@@ -131,6 +131,7 @@ export interface ProductsViewData {
     categoryOptions: SelectOption[];
     selectedChannel: string;
     channelOptions: SelectOption[];
+    selectedAbcClass: string;
   };
   metrics: DisplayMetric[];
   categorySeries: Array<{
@@ -151,6 +152,13 @@ export interface ProductsViewData {
     quantity: number;
     products: number;
     share: number;
+  }>;
+  abcItems: Array<{
+    label: string;
+    category: string;
+    quantity: number;
+    revenue: number;
+    averagePrice: number;
   }>;
   topProducts: RankedEntry[];
   lowProducts: RankedEntry[];
@@ -397,11 +405,22 @@ function rankEntries(
     }));
 }
 
+function getLiquidSalesValue<
+  T extends {
+    grossSales: number;
+    discounts: number;
+    serviceFee: number;
+    deliveryFee: number;
+  },
+>(item: T) {
+  return item.grossSales - item.discounts - item.serviceFee - item.deliveryFee;
+}
+
 function buildDateSeries(rows: PerformanceDay[]) {
   return rows.map((row) => ({
     label: row.dateLabel,
     gross: row.grossSales,
-    final: row.finalNetSales,
+    net: getLiquidSalesValue(row),
     orders: row.orders,
   }));
 }
@@ -495,14 +514,14 @@ export function buildRevenueView(
   );
 
   const grossSales = sumBy(performance, (item) => item.grossSales);
-  const finalNetSales = sumBy(performance, (item) => item.finalNetSales);
+  const netSales = sumBy(performance, (item) => getLiquidSalesValue(item));
   const discounts = sumBy(performance, (item) => item.discounts);
   const serviceFee = sumBy(performance, (item) => item.serviceFee);
   const deliveryFee = sumBy(performance, (item) => item.deliveryFee);
   const courtesies = sumBy(performance, (item) => item.courtesies);
   const orders = sumBy(performance, (item) => item.orders);
   const customers = sumBy(performance, (item) => item.customers);
-  const avgFinalTicket = customers > 0 ? finalNetSales / customers : 0;
+  const avgNetTicket = customers > 0 ? netSales / customers : 0;
 
   return {
     hasData: performance.length > 0,
@@ -520,10 +539,11 @@ export function buildRevenueView(
         tone: "accent",
       },
       {
-        label: "Venda liquida final",
-        value: finalNetSales,
+        label: "Venda liquida",
+        value: netSales,
         format: "currency",
-        helper: "Liquido final consolidado pela performance da loja.",
+        helper:
+          "Faturamento bruto menos descontos, taxa de servico e taxa de entrega.",
         tone: "forest",
       },
       {
@@ -562,10 +582,10 @@ export function buildRevenueView(
         tone: "forest",
       },
       {
-        label: "Ticket medio final",
-        value: avgFinalTicket,
+        label: "Ticket medio liquido",
+        value: avgNetTicket,
         format: "currency",
-        helper: "Venda liquida final dividida por clientes.",
+        helper: "Venda liquida dividida por clientes.",
         tone: "slate",
       },
       {
@@ -587,7 +607,7 @@ export function buildRevenueView(
     tableRows: performance.map((item) => ({
       label: item.dateLabel,
       gross: item.grossSales,
-      final: item.finalNetSales,
+      net: getLiquidSalesValue(item),
       discounts: item.discounts,
       orders: item.orders,
     })),
@@ -961,6 +981,7 @@ export function buildProductsView(
   bundle: ParsedBundle,
   categoryParam?: string,
   channelParam?: string,
+  abcClassParam?: string,
 ): ProductsViewData {
   const hasCurveData = bundle.productCurve.length > 0;
   const aggregatedCurve = aggregateProductCurve(bundle.productCurve);
@@ -1089,6 +1110,29 @@ export function buildProductsView(
       return b.revenue - a.revenue;
     });
 
+  const selectedAbcClass = abcSeries.some((item) => item.label === abcClassParam)
+    ? abcClassParam || ""
+    : "";
+
+  const abcItems = selectedAbcClass
+    ? [...filteredProducts]
+        .filter((item) => item.abcClass === selectedAbcClass)
+        .sort((a, b) => {
+          if (b.scopedRevenue !== a.scopedRevenue) {
+            return b.scopedRevenue - a.scopedRevenue;
+          }
+
+          return b.scopedQuantity - a.scopedQuantity;
+        })
+        .map((item) => ({
+          label: item.product,
+          category: item.category,
+          quantity: item.scopedQuantity,
+          revenue: item.scopedRevenue,
+          averagePrice: item.averagePrice,
+        }))
+    : [];
+
   const dominantAbcClass = [...abcSeries].sort((a, b) => b.revenue - a.revenue)[0];
   const classAShare =
     abcSeries.find((item) => item.label === "Classe A")?.share || 0;
@@ -1203,6 +1247,7 @@ export function buildProductsView(
       categoryOptions,
       selectedChannel,
       channelOptions,
+      selectedAbcClass,
     },
     metrics: [
       {
@@ -1258,6 +1303,7 @@ export function buildProductsView(
       }))
       .sort((a, b) => b.quantity - a.quantity),
     abcSeries,
+    abcItems,
     topProducts,
     lowProducts,
     curveNote,

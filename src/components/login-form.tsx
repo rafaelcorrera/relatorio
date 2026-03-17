@@ -14,11 +14,15 @@ export function LoginForm({
   usingDefaultCredentials,
   allowlistDescription,
   errorMessage,
+  storeSlug,
+  storeName,
 }: {
   mode: "google" | "local";
   usingDefaultCredentials: boolean;
   allowlistDescription?: string;
   errorMessage?: string;
+  storeSlug?: string;
+  storeName?: string;
 }) {
   const [state, formAction, isPending] = useActionState(
     loginAction,
@@ -29,16 +33,17 @@ export function LoginForm({
     return (
       <div className="grid gap-5">
         {errorMessage ? (
-          <p className="rounded-[24px] border border-[color:rgba(159,35,68,0.18)] bg-[color:rgba(159,35,68,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
+          <p className="premium-alert rounded-[24px] px-4 py-3 text-sm">
             {errorMessage}
           </p>
         ) : null}
 
-        <GoogleLoginButton />
+        <GoogleLoginButton storeSlug={storeSlug} />
 
         <div className="premium-note rounded-[26px] px-5 py-5 text-sm leading-7 text-[var(--muted)]">
           <p className="font-medium text-[var(--ink)]">
-            A autenticacao usa Google via Supabase.
+            A autenticacao usa Google via Supabase
+            {storeName ? ` para ${storeName}` : " para o Grupo Alpha Food Service"}.
           </p>
           <p className="mt-2">
             {allowlistDescription ||
@@ -51,6 +56,8 @@ export function LoginForm({
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
+      {storeSlug ? <input type="hidden" name="store" value={storeSlug} /> : null}
+
       <div className="premium-field">
         <label htmlFor="email" className="text-sm font-medium text-[var(--ink)]">
           Email
@@ -85,13 +92,13 @@ export function LoginForm({
       </div>
 
       {state.error ? (
-        <p className="rounded-[24px] border border-[color:rgba(159,35,68,0.18)] bg-[color:rgba(159,35,68,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
+        <p className="premium-alert rounded-[24px] px-4 py-3 text-sm">
           {state.error}
         </p>
       ) : null}
 
       {errorMessage ? (
-        <p className="rounded-[24px] border border-[color:rgba(159,35,68,0.18)] bg-[color:rgba(159,35,68,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
+        <p className="premium-alert rounded-[24px] px-4 py-3 text-sm">
           {errorMessage}
         </p>
       ) : null}
@@ -107,7 +114,8 @@ export function LoginForm({
       <div className="premium-note rounded-[26px] px-5 py-4 text-sm leading-7 text-[var(--muted)]">
         {usingDefaultCredentials ? (
           <p>
-            Ambiente inicial configurado com credencial padrao:
+            Ambiente inicial configurado
+            {storeName ? ` para ${storeName}` : " para acesso interno"} com credencial padrao:
             {" "}
             <span className="font-semibold text-[var(--ink)]">
               admin@gafs.local / gafs123

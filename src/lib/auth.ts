@@ -10,7 +10,14 @@ import { isSupabaseAuthEnabled } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const SESSION_COOKIE = "gafs_session";
-const SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const SESSION_TTL_MS = 1000 * 60 * 60;
+
+export const SESSION_TTL_MINUTES = SESSION_TTL_MS / (1000 * 60);
+
+export interface AuthSession {
+  email: string;
+  expiresAt: number;
+}
 
 function getSessionSecret() {
   return process.env.SESSION_SECRET || "gafs-dev-session-secret";
@@ -37,11 +44,7 @@ export function getAuthConfig() {
   };
 }
 
-export async function createSession(email: string) {
-  if (isSupabaseAuthEnabled()) {
-    throw new Error("Use o login Google do Supabase para criar sessoes.");
-  }
-
+async function writeSessionCookie(email: string) {
   const payload = Buffer.from(
     JSON.stringify({
       email,
@@ -59,43 +62,7 @@ export async function createSession(email: string) {
   });
 }
 
-export async function destroySession() {
-  if (isSupabaseAuthEnabled()) {
-    const supabase = await createSupabaseServerClient();
-    await supabase.auth.signOut();
-    return;
-  }
-
-  const store = await cookies();
-  store.delete(SESSION_COOKIE);
-}
-
-export async function getSession() {
-  if (isSupabaseAuthEnabled()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.getClaims();
-    const claims = data?.claims;
-
-    if (error || !claims?.sub) {
-      return null;
-    }
-
-    const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
-
-    if (!email) {
-      return null;
-    }
-
-    const allowed = await isEmailAllowed(email);
-    if (!allowed) {
-      return null;
-    }
-
-    return {
-      email,
-    };
-  }
-
+async function readSessionCookie(): Promise<AuthSession | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
 
@@ -122,10 +89,78 @@ export async function getSession() {
 
     return {
       email: parsed.email,
+      expiresAt: parsed.exp,
     };
   } catch {
     return null;
   }
+}
+
+async function clearSessionCookie() {
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
+}
+
+export async function createSession(email: string) {
+  if (isSupabaseAuthEnabled()) {
+    throw new Error("Use o login Google do Supabase para criar sessoes.");
+  }
+
+  await writeSessionCookie(email);
+}
+
+export async function createManagedSession(email: string) {
+  await writeSessionCookie(email);
+}
+
+export async function destroySession() {
+  await clearSessionCookie();
+
+  if (isSupabaseAuthEnabled()) {
+    const supabase = await createSupabaseServerClient();
+    await supabase.auth.signOut();
+    return;
+  }
+}
+
+export async function getSession() {
+  const managedSession = await readSessionCookie();
+
+  if (!managedSession) {
+    return null;
+  }
+
+  if (isSupabaseAuthEnabled()) {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.getClaims();
+    const claims = data?.claims;
+
+    if (error || !claims?.sub) {
+      return null;
+    }
+
+    const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
+
+    if (!email) {
+      return null;
+    }
+
+    const allowed = await isEmailAllowed(email);
+    if (!allowed) {
+      return null;
+    }
+
+    if (email !== managedSession.email) {
+      return null;
+    }
+
+    return {
+      email,
+      expiresAt: managedSession.expiresAt,
+    };
+  }
+
+  return managedSession;
 }
 
 export async function requireSession() {

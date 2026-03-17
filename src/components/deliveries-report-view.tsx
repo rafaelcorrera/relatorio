@@ -28,9 +28,11 @@ import {
 
 export function DeliveriesReportView({
   bundleKey,
+  storeSlug,
   view,
 }: {
   bundleKey: string;
+  storeSlug: string;
   view: DeliveriesViewData;
 }) {
   return (
@@ -80,7 +82,7 @@ export function DeliveriesReportView({
                     formatter={(value) => `${Number(value ?? 0).toLocaleString("pt-BR")} entregas`}
                     contentStyle={getTooltipStyle()}
                   />
-                  <Bar dataKey="deliveries" fill="#2e5a4c" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="deliveries" fill="var(--chart-2)" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartFrame>
@@ -108,14 +110,14 @@ export function DeliveriesReportView({
                   <Line
                     type="monotone"
                     dataKey="deliveries"
-                    stroke="#b6432c"
+                    stroke="var(--chart-1)"
                     strokeWidth={3}
-                    dot={{ r: 3, fill: "#b6432c" }}
+                    dot={{ r: 3, fill: "var(--chart-1)" }}
                   />
                   <Line
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#d29b42"
+                    stroke="var(--chart-3)"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -161,6 +163,7 @@ export function DeliveriesReportView({
             className="premium-note mb-4 grid gap-3 rounded-[26px] p-4 md:grid-cols-[1fr_auto]"
           >
             <input type="hidden" name="bundle" value={bundleKey} />
+            <input type="hidden" name="store" value={storeSlug} />
             <input type="hidden" name="start" value={view.filters.start} />
             <input type="hidden" name="end" value={view.filters.end} />
             <label className="premium-field text-sm font-medium text-[var(--ink)]">

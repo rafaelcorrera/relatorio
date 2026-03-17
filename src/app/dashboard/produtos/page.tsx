@@ -11,24 +11,37 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{
     bundle?: string;
+    store?: string;
     category?: string;
     channel?: string;
+    abcClass?: string;
   }>;
 }) {
   const params = await searchParams;
-  const { session, bundles, selectedBundle } = await loadDashboardContext(params.bundle);
+  const { session, bundles, selectedBundle, selectedStore, bundleCountsByStore } =
+    await loadDashboardContext({
+      periodKey: params.bundle,
+      storeSlug: params.store,
+    });
   const view = selectedBundle
-    ? buildProductsView(selectedBundle, params.category, params.channel)
+    ? buildProductsView(
+        selectedBundle,
+        params.category,
+        params.channel,
+        params.abcClass,
+      )
     : null;
 
   return (
     <DashboardShell
       currentSection="produtos"
       title="Itens mais vendidos, menos vendidos e desempenho por categoria"
-      description="Os rankings consideram todos os itens vendidos por padrao e podem ser refinados por categoria e por canal. A tela agora cruza o volume por canal com a Curva ABC para mostrar faturamento, preco medio e concentracao por classe; quando um canal e filtrado, os valores monetarios usam o preco medio da Curva ABC como referencia."
+      description="Os rankings consideram todos os itens vendidos por padrão e podem ser refinados por categoria e por canal. A tela cruza o volume por canal com a Curva ABC para mostrar faturamento, preço médio e concentração por classe; quando um canal é filtrado, os valores monetários usam o preço médio da Curva ABC como referência."
       pathname="/dashboard/produtos"
       bundles={bundles}
       selectedBundle={selectedBundle}
+      selectedStore={selectedStore}
+      bundleCountsByStore={bundleCountsByStore}
       sessionEmail={session.email}
       filters={
         selectedBundle && view ? (
@@ -36,7 +49,15 @@ export default async function ProductsPage({
             method="GET"
             className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]"
           >
+            <input type="hidden" name="store" value={selectedStore.slug} />
             <input type="hidden" name="bundle" value={selectedBundle.periodKey} />
+            {view.filters.selectedAbcClass ? (
+              <input
+                type="hidden"
+                name="abcClass"
+                value={view.filters.selectedAbcClass}
+              />
+            ) : null}
             <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Categoria
               <select
@@ -74,7 +95,7 @@ export default async function ProductsPage({
               Aplicar filtro
             </button>
             <Link
-              href={`/dashboard/produtos?bundle=${selectedBundle.periodKey}`}
+              href={`/dashboard/produtos?store=${selectedStore.slug}&bundle=${selectedBundle.periodKey}`}
               className="premium-button-secondary self-end"
             >
               Limpar
@@ -84,9 +105,17 @@ export default async function ProductsPage({
       }
     >
       {selectedBundle && view ? (
-        <ProductsReportView view={view} />
+        <ProductsReportView
+          view={view}
+          pathname="/dashboard/produtos"
+          storeSlug={selectedStore.slug}
+          bundleKey={selectedBundle.periodKey}
+        />
       ) : (
-        <DashboardEmptyState />
+        <DashboardEmptyState
+          storeSlug={selectedStore.slug}
+          storeName={selectedStore.name}
+        />
       )}
     </DashboardShell>
   );
