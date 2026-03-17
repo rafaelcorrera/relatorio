@@ -12,6 +12,7 @@ import { DashboardAssistant } from "@/components/dashboard-assistant";
 import { LogoutButton } from "@/components/logout-button";
 import { PeriodSwitcher } from "@/components/period-switcher";
 import { UploadReportsForm } from "@/components/upload-reports-form";
+import { isAssistantConfigured } from "@/lib/report-assistant";
 import type { ParsedBundle } from "@/lib/types";
 
 type SectionKey = "faturamento" | "entregas" | "mesa" | "produtos";
@@ -75,19 +76,21 @@ export async function DashboardShell({
     : `${pathname}#acoes-dashboard`;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-4 py-32 md:px-6 lg:px-8">
+    <main className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col gap-8 px-4 py-32 md:px-6 lg:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-10 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top_left,rgba(255,228,184,0.24),transparent_24%),radial-gradient(circle_at_top_right,rgba(159,35,68,0.18),transparent_26%)] blur-2xl" />
+
       <div className="pointer-events-none fixed left-1/2 top-4 z-[999] w-[calc(100%-2rem)] max-w-[1780px] -translate-x-1/2 px-0">
         <div className="pointer-events-auto w-full">
-          <nav className="flex flex-wrap items-center justify-between gap-4 rounded-[34px] border border-[#7a3652] bg-[linear-gradient(135deg,rgba(88,16,38,0.97),rgba(63,10,29,0.98))] px-5 py-4 text-white shadow-[0_30px_90px_rgba(68,8,28,0.36)] backdrop-blur-xl md:px-7">
+          <nav className="flex flex-wrap items-center justify-between gap-4 rounded-[36px] border border-[rgba(252,234,215,0.12)] bg-[linear-gradient(135deg,rgba(20,8,12,0.94),rgba(74,24,39,0.95)_52%,rgba(30,11,17,0.94))] px-5 py-4 text-white shadow-[0_30px_90px_rgba(39,10,19,0.4)] backdrop-blur-xl md:px-7">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-[22px] bg-[radial-gradient(circle_at_top_left,rgba(255,240,194,0.55),transparent_28%),linear-gradient(135deg,#c45a7c_0%,#8f2748_45%,#61203a_100%)] shadow-[0_16px_40px_rgba(127,25,57,0.4)]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(255,237,196,0.82),transparent_30%),linear-gradient(135deg,#cf9f4c_0%,#a12c4b_48%,#552233_100%)] shadow-[0_18px_46px_rgba(135,55,35,0.38)]">
                 <ChartColumn className="h-7 w-7 text-white" />
               </div>
               <div className="min-w-0">
                 <p className="truncate text-[1.95rem] font-semibold leading-none tracking-[-0.04em] text-white">
                   Relatorios GAFS
                 </p>
-                <p className="mt-2 truncate text-xs font-semibold uppercase tracking-[0.42em] text-[#f0c8d5]">
+                <p className="mt-2 truncate text-xs font-semibold uppercase tracking-[0.42em] text-[#f4d7c3]">
                   Visao Operacional
                 </p>
               </div>
@@ -105,11 +108,11 @@ export async function DashboardShell({
                     href={href}
                     className={`inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold transition lg:px-5 ${
                       isActive
-                        ? "bg-[rgba(255,245,247,0.14)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
-                        : "text-white/88 hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
+                        ? "border border-[rgba(255,228,184,0.18)] bg-[linear-gradient(135deg,rgba(255,255,255,0.14),rgba(255,230,186,0.12))] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]"
+                        : "text-white/78 hover:bg-[rgba(255,255,255,0.08)] hover:text-white"
                     }`}
                   >
-                    <Icon className={`h-4 w-4 ${isActive ? "text-[#ffd2a8]" : "text-white/70"}`} />
+                    <Icon className={`h-4 w-4 ${isActive ? "text-[#ffd4a4]" : "text-white/58"}`} />
                     {item.label}
                   </Link>
                 );
@@ -118,7 +121,7 @@ export async function DashboardShell({
 
             <Link
               href={actionHref}
-              className="inline-flex items-center gap-3 rounded-full border border-[#b76a84] bg-[linear-gradient(135deg,rgba(132,34,66,0.98),rgba(92,20,46,0.98))] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_20px_46px_rgba(68,8,28,0.4)] transition hover:-translate-y-0.5 hover:brightness-110 lg:px-7"
+              className="inline-flex items-center gap-3 rounded-full border border-[rgba(255,219,181,0.2)] bg-[linear-gradient(135deg,rgba(211,161,80,0.95),rgba(151,41,69,0.95))] px-5 py-3.5 text-sm font-semibold text-white shadow-[0_20px_46px_rgba(68,8,28,0.34)] transition hover:-translate-y-0.5 hover:brightness-110 lg:px-7"
             >
               Atualizar Dados
               <ArrowRight className="h-4 w-4" />
@@ -127,61 +130,61 @@ export async function DashboardShell({
         </div>
       </div>
 
-      <section className="relative rounded-[34px] border border-[var(--line)] bg-[linear-gradient(135deg,rgba(255,250,243,0.96),rgba(244,236,225,0.96))] shadow-[0_28px_80px_rgba(64,36,16,0.12)]">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.66),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(182,67,44,0.07),transparent_28%)]" />
+      <section className="relative overflow-hidden rounded-[40px] border border-[rgba(252,234,215,0.12)] bg-[linear-gradient(140deg,#1d0c13_0%,#58192a_44%,#241016_100%)] shadow-[0_40px_120px_rgba(39,11,18,0.28)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,234,194,0.18),transparent_20%),radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.08),transparent_18%),radial-gradient(circle_at_bottom_right,rgba(203,154,72,0.18),transparent_20%)]" />
         <div className="relative grid gap-6 p-6 lg:grid-cols-[1.12fr_0.88fr] lg:p-8">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
-                <ChartColumn className="h-4 w-4 text-[var(--accent)]" />
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-[#f7dbca] backdrop-blur">
+                <ChartColumn className="h-4 w-4 text-[#ffd4a4]" />
                 Relatorios GAFS
               </span>
               {selectedBundle ? (
-                <span className="inline-flex rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--ink)]">
+                <span className="inline-flex rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/86 backdrop-blur">
                   {selectedBundle.restaurantCode} • {selectedBundle.periodLabel}
                 </span>
               ) : null}
             </div>
 
-            <h1 className="mt-5 max-w-4xl text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">
+            <h1 className="mt-6 max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-white md:text-[3.65rem] md:leading-[1.02]">
               {title}
             </h1>
-            <p className="mt-4 max-w-3xl text-base leading-7 text-[var(--muted)]">
+            <p className="mt-5 max-w-3xl text-base leading-8 text-white/72 md:text-lg">
               {description}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-[26px] border border-[var(--line)] bg-white/72 px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[28px] border border-white/10 bg-white/7 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/48">
                   Sessao
                 </p>
-                <p className="mt-2 text-sm font-medium text-[var(--ink)]">
+                <p className="mt-3 text-sm font-medium text-white/86">
                   {sessionEmail}
                 </p>
               </div>
-              <div className="rounded-[26px] border border-[var(--line)] bg-white/72 px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+              <div className="rounded-[28px] border border-white/10 bg-white/7 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/48">
                   Fontes do periodo
                 </p>
-                <p className="mt-2 text-sm font-medium text-[var(--ink)]">
+                <p className="mt-3 text-sm font-medium text-white/86">
                   {selectedBundle ? `${selectedBundle.sourceFiles.length} arquivos` : "Sem arquivos"}
                 </p>
               </div>
-              <div className="rounded-[26px] border border-[var(--line)] bg-white/72 px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+              <div className="rounded-[28px] border border-white/10 bg-white/7 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/48">
                   Cobertura
                 </p>
-                <p className="mt-2 text-sm font-medium text-[var(--ink)]">
+                <p className="mt-3 text-sm font-medium text-white/86">
                   {selectedBundle
                     ? `${Object.values(selectedBundle.coverage).filter(Boolean).length}/4 relatorios`
                     : "Aguardando importacao"}
                 </p>
               </div>
-              <div className="rounded-[26px] border border-[var(--line)] bg-white/72 px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+              <div className="rounded-[28px] border border-white/10 bg-white/7 px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/48">
                   Ultima carga
                 </p>
-                <p className="mt-2 text-sm font-medium text-[var(--ink)]">
+                <p className="mt-3 text-sm font-medium text-white/86">
                   {selectedBundle
                     ? new Intl.DateTimeFormat("pt-BR", {
                         dateStyle: "short",
@@ -198,7 +201,7 @@ export async function DashboardShell({
               <LogoutButton />
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-white/84 p-5 shadow-[0_18px_60px_rgba(46,32,18,0.08)]">
+            <div className="premium-surface rounded-[32px] p-5">
               {bundles.length && selectedBundle ? (
                 <PeriodSwitcher
                   currentValue={selectedBundle.periodKey}
@@ -209,13 +212,13 @@ export async function DashboardShell({
                   pathname={pathname}
                 />
               ) : (
-                <div className="rounded-2xl bg-[var(--panel-soft)] px-4 py-4 text-sm text-[var(--muted)]">
+                <div className="rounded-[24px] border border-dashed border-[var(--line-strong)] bg-[rgba(255,255,255,0.46)] px-4 py-4 text-sm text-[var(--muted)]">
                   Importe um periodo para liberar a troca de relatorios.
                 </div>
               )}
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-white/84 p-5 shadow-[0_18px_60px_rgba(46,32,18,0.08)]">
+            <div className="premium-surface rounded-[32px] p-5">
               <UploadReportsForm />
             </div>
           </div>
@@ -223,7 +226,7 @@ export async function DashboardShell({
       </section>
 
       {filters ? (
-        <section className="mt-4 rounded-[28px] border border-[var(--line)] bg-white/84 p-5 shadow-[0_18px_60px_rgba(46,32,18,0.08)]">
+        <section className="premium-surface mt-1 rounded-[32px] p-5">
           {filters}
         </section>
       ) : null}
@@ -234,7 +237,7 @@ export async function DashboardShell({
           periodLabel={selectedBundle.periodLabel}
           restaurantCode={selectedBundle.restaurantCode}
           currentSection={currentSection}
-          enabled={Boolean(process.env.OPENAI_API_KEY?.trim())}
+          enabled={isAssistantConfigured()}
         />
       ) : null}
 

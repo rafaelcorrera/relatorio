@@ -33,7 +33,7 @@ export function ProductsReportView({
     <div className="grid gap-5">
       <MetricGrid metrics={view.metrics} />
 
-      <section className="rounded-[28px] border border-[var(--line)] bg-white/84 p-5 text-sm leading-6 text-[var(--muted)] shadow-[0_18px_60px_rgba(46,32,18,0.08)]">
+      <section className="premium-note rounded-[30px] p-5 text-sm leading-7 text-[var(--muted)]">
         {view.curveNote}
       </section>
 

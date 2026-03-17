@@ -45,7 +45,7 @@ export default async function DeliveriesPage({
               name="volumeDay"
               value={view.filters.selectedVolumeDay}
             />
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Data inicial
               <input
                 type="date"
@@ -53,10 +53,10 @@ export default async function DeliveriesPage({
                 min={view.filters.min}
                 max={view.filters.max}
                 defaultValue={view.filters.start}
-                className="h-12 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-input text-sm"
               />
             </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Data final
               <input
                 type="date"
@@ -64,18 +64,18 @@ export default async function DeliveriesPage({
                 min={view.filters.min}
                 max={view.filters.max}
                 defaultValue={view.filters.end}
-                className="h-12 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-input text-sm"
               />
             </label>
             <button
               type="submit"
-              className="self-end rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="premium-button self-end"
             >
               Aplicar filtro
             </button>
             <Link
               href={`/dashboard/entregas?bundle=${selectedBundle.periodKey}`}
-              className="self-end rounded-2xl border border-[var(--line)] px-5 py-3 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="premium-button-secondary self-end"
             >
               Limpar
             </Link>

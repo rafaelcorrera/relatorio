@@ -17,14 +17,14 @@ export function PeriodSwitcher({
   const router = useRouter();
 
   return (
-    <div className="grid gap-2">
+    <div className="premium-field">
       <label className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">
         Periodo
       </label>
       <select
         value={currentValue}
         onChange={(event) => router.push(`${pathname}?bundle=${event.currentTarget.value}`)}
-        className="h-11 rounded-2xl border border-[var(--line)] bg-white/90 px-4 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
+        className="premium-select text-sm"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

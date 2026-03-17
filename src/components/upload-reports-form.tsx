@@ -17,7 +17,7 @@ export function UploadReportsForm() {
 
   return (
     <form action={formAction} className="grid gap-4">
-      <div className="grid gap-2">
+      <div className="premium-field">
         <label
           htmlFor="reports"
           className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--muted)]"
@@ -30,17 +30,17 @@ export function UploadReportsForm() {
           type="file"
           accept=".xlsx"
           multiple
-          className="block w-full rounded-2xl border border-dashed border-[var(--line)] bg-white/80 px-4 py-3 text-sm text-[var(--muted)] file:mr-4 file:rounded-xl file:border-0 file:bg-[var(--accent)] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:border-[var(--accent)]"
+          className="premium-file block text-sm text-[var(--muted)]"
         />
       </div>
 
-      <div className="rounded-2xl bg-[var(--panel-soft)] px-4 py-3 text-sm text-[var(--muted)]">
+      <div className="premium-note rounded-[26px] px-5 py-4 text-sm leading-7 text-[var(--muted)]">
         Envie os arquivos de um mesmo periodo. O sistema reconhece automaticamente
         pedidos, entregas, performance da loja e venda de produtos por canal.
       </div>
 
       {state.error ? (
-        <p className="rounded-2xl border border-[color:rgba(182,67,44,0.2)] bg-[color:rgba(182,67,44,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
+        <p className="rounded-[24px] border border-[color:rgba(159,35,68,0.18)] bg-[color:rgba(159,35,68,0.08)] px-4 py-3 text-sm text-[var(--accent)]">
           {state.error}
         </p>
       ) : null}
@@ -48,7 +48,7 @@ export function UploadReportsForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[var(--forest)] px-5 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+        className="premium-button-forest"
       >
         <Upload className="h-4 w-4" />
         {isPending ? "Processando arquivos..." : "Atualizar dashboard"}

@@ -5,12 +5,12 @@ import { useSyncExternalStore } from "react";
 import type { DisplayMetric, RankedEntry } from "@/lib/report-views";
 
 export const CHART_COLORS = [
-  "#b6432c",
-  "#2e5a4c",
-  "#d29b42",
-  "#5f6b8f",
-  "#85644c",
-  "#4f7a70",
+  "#9f2344",
+  "#245e54",
+  "#cb9a48",
+  "#5a3042",
+  "#d56f48",
+  "#4f6787",
 ];
 
 const TONE_CLASSNAMES: Record<
@@ -21,27 +21,28 @@ const TONE_CLASSNAMES: Record<
   }
 > = {
   accent: {
-    badge: "bg-[color:rgba(182,67,44,0.12)] text-[var(--accent)]",
+    badge: "bg-[color:rgba(159,35,68,0.12)] text-[var(--accent)]",
     value: "text-[var(--accent)]",
   },
   forest: {
-    badge: "bg-[color:rgba(46,90,76,0.12)] text-[var(--forest)]",
+    badge: "bg-[color:rgba(36,94,84,0.12)] text-[var(--forest)]",
     value: "text-[var(--forest)]",
   },
   gold: {
-    badge: "bg-[color:rgba(210,155,66,0.14)] text-[var(--gold)]",
+    badge: "bg-[color:rgba(203,154,72,0.15)] text-[var(--gold)]",
     value: "text-[var(--gold)]",
   },
   slate: {
-    badge: "bg-[color:rgba(95,107,143,0.12)] text-[#5f6b8f]",
-    value: "text-[#5f6b8f]",
+    badge: "bg-[color:rgba(79,103,135,0.12)] text-[#4f6787]",
+    value: "text-[#4f6787]",
   },
 };
 
 const TOOLTIP_STYLE = {
-  borderRadius: 18,
-  border: "1px solid rgba(86, 70, 55, 0.12)",
-  background: "rgba(255, 250, 243, 0.96)",
+  borderRadius: 22,
+  border: "1px solid rgba(111, 70, 59, 0.16)",
+  background: "rgba(255, 251, 246, 0.98)",
+  boxShadow: "0 18px 42px rgba(49, 22, 18, 0.12)",
 };
 
 function subscribeToClientReady() {
@@ -91,7 +92,7 @@ export function ChartFrame({
 
   if (!mounted) {
     return (
-      <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-[var(--line)] bg-[var(--panel-soft)] text-sm text-[var(--muted)]">
+      <div className="flex h-full items-center justify-center rounded-[26px] border border-dashed border-[var(--line-strong)] bg-[linear-gradient(180deg,rgba(255,251,246,0.92),rgba(250,242,234,0.9))] text-sm text-[var(--muted)]">
         Carregando grafico...
       </div>
     );
@@ -110,16 +111,19 @@ export function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-[var(--line)] bg-white/84 p-6 shadow-[0_18px_60px_rgba(46,32,18,0.08)] backdrop-blur">
-      <div className="mb-5 flex flex-col gap-1">
+    <section className="premium-surface rounded-[34px] p-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(159,35,68,0.08),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(203,154,72,0.08),transparent_26%)]" />
+      <div className="relative mb-6 flex flex-col gap-2">
         {eyebrow ? (
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+          <span className="premium-pill w-fit bg-[rgba(255,255,255,0.72)] text-[var(--muted)]">
             {eyebrow}
           </span>
         ) : null}
-        <h3 className="text-lg font-semibold text-[var(--ink)]">{title}</h3>
+        <h3 className="text-[1.25rem] font-semibold tracking-[-0.03em] text-[var(--ink)]">
+          {title}
+        </h3>
       </div>
-      {children}
+      <div className="relative">{children}</div>
     </section>
   );
 }
@@ -136,20 +140,23 @@ export function MetricGrid({
         return (
           <div
             key={metric.label}
-            className="rounded-[28px] border border-[var(--line)] bg-white/86 p-5 shadow-[0_18px_60px_rgba(46,32,18,0.08)]"
+            className="premium-surface rounded-[30px] p-5"
           >
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}
-            >
-              {metric.label}
-            </span>
-            <p className={`mt-4 text-3xl font-semibold tracking-tight ${tone.value}`}>
-              {metric.displayValue ??
-                formatMetricValue(metric.value ?? 0, metric.format)}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              {metric.helper}
-            </p>
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(159,35,68,0.06),transparent_20%)]" />
+            <div className="relative">
+              <span
+                className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${tone.badge}`}
+              >
+                {metric.label}
+              </span>
+              <p className={`mt-4 text-[2.15rem] font-semibold tracking-[-0.05em] ${tone.value}`}>
+                {metric.displayValue ??
+                  formatMetricValue(metric.value ?? 0, metric.format)}
+              </p>
+              <p className="mt-3 max-w-[26rem] text-sm leading-6 text-[var(--muted)]">
+                {metric.helper}
+              </p>
+            </div>
           </div>
         );
       })}
@@ -168,7 +175,7 @@ export function RankedList({
 }) {
   if (!items.length) {
     return (
-      <div className="rounded-2xl border border-dashed border-[var(--line)] px-4 py-6 text-sm text-[var(--muted)]">
+      <div className="rounded-[24px] border border-dashed border-[var(--line-strong)] bg-[rgba(255,255,255,0.4)] px-4 py-6 text-sm text-[var(--muted)]">
         {emptyLabel}
       </div>
     );
@@ -179,7 +186,7 @@ export function RankedList({
       {items.map((item) => (
         <div
           key={`${item.label}-${item.value}`}
-          className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] px-4 py-3"
+          className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-[24px] border border-[var(--line-strong)] bg-[linear-gradient(180deg,rgba(255,251,246,0.88),rgba(249,241,232,0.84))] px-4 py-3.5 shadow-[0_12px_28px_rgba(50,21,18,0.05)] transition hover:-translate-y-0.5"
         >
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-[var(--ink)]">
@@ -192,7 +199,7 @@ export function RankedList({
             ) : null}
           </div>
           <div className="text-right">
-            <p className="text-sm font-semibold text-[var(--accent)]">
+            <p className="text-base font-semibold text-[var(--accent)]">
               {item.value.toLocaleString("pt-BR")}
             </p>
             <p className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted)]">

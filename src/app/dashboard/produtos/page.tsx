@@ -37,12 +37,12 @@ export default async function ProductsPage({
             className="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto]"
           >
             <input type="hidden" name="bundle" value={selectedBundle.periodKey} />
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Categoria
               <select
                 name="category"
                 defaultValue={view.filters.selectedCategory}
-                className="h-12 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-select text-sm"
               >
                 <option value="">Todas as categorias</option>
                 {view.filters.categoryOptions.map((option) => (
@@ -52,12 +52,12 @@ export default async function ProductsPage({
                 ))}
               </select>
             </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Canal
               <select
                 name="channel"
                 defaultValue={view.filters.selectedChannel}
-                className="h-12 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-select text-sm"
               >
                 <option value="">Todos os canais</option>
                 {view.filters.channelOptions.map((option) => (
@@ -69,13 +69,13 @@ export default async function ProductsPage({
             </label>
             <button
               type="submit"
-              className="self-end rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="premium-button self-end"
             >
               Aplicar filtro
             </button>
             <Link
               href={`/dashboard/produtos?bundle=${selectedBundle.periodKey}`}
-              className="self-end rounded-2xl border border-[var(--line)] px-5 py-3 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="premium-button-secondary self-end"
             >
               Limpar
             </Link>

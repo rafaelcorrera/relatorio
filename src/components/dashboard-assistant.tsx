@@ -179,9 +179,9 @@ export function DashboardAssistant({
       {isOpen ? (
         <section
           id="dashboard-assistant-panel"
-          className="relative w-[min(430px,calc(100vw-1.5rem))] overflow-hidden rounded-[30px] border border-[#7a3652] bg-[linear-gradient(135deg,rgba(91,18,40,0.98),rgba(57,10,26,0.98))] text-white shadow-[0_24px_80px_rgba(68,8,28,0.36)]"
+          className="relative w-[min(450px,calc(100vw-1.5rem))] overflow-hidden rounded-[32px] border border-[rgba(255,227,188,0.12)] bg-[linear-gradient(145deg,rgba(26,9,14,0.98),rgba(83,23,40,0.98)_54%,rgba(34,10,19,0.99))] text-white shadow-[0_30px_90px_rgba(39,10,19,0.4)]"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,220,190,0.16),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_22%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,228,184,0.18),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_22%),radial-gradient(circle_at_80%_18%,rgba(203,154,72,0.14),transparent_16%)]" />
 
           <div className="relative p-4 sm:p-5">
             <div className="flex items-start justify-between gap-3">
@@ -215,10 +215,10 @@ export function DashboardAssistant({
               {messages.map((message) => (
                 <article
                   key={message.id}
-                  className={`rounded-[24px] border px-4 py-4 ${
+                  className={`rounded-[24px] border px-4 py-4 shadow-[0_12px_26px_rgba(24,7,14,0.16)] ${
                     message.role === "assistant"
-                      ? "border-white/10 bg-[rgba(255,255,255,0.08)]"
-                      : "border-[#efbb8f]/28 bg-[rgba(243,193,149,0.12)]"
+                      ? "border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.05))]"
+                      : "border-[#efbb8f]/28 bg-[linear-gradient(180deg,rgba(243,193,149,0.15),rgba(243,193,149,0.11))]"
                   }`}
                 >
                   <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
@@ -285,7 +285,7 @@ export function DashboardAssistant({
                     <button
                       type="submit"
                       disabled={isPending || !question.trim()}
-                      className="inline-flex items-center gap-2 rounded-full bg-[#f3c195] px-5 py-3 text-sm font-semibold text-[#4f1528] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#f4d4b6]/20 bg-[linear-gradient(135deg,#f3c195,#cb9a48)] px-5 py-3 text-sm font-semibold text-[#4f1528] shadow-[0_18px_36px_rgba(203,154,72,0.18)] transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isPending ? (
                         <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -302,8 +302,9 @@ export function DashboardAssistant({
               </>
             ) : (
               <div className="mt-4 rounded-[24px] border border-[#c68497]/30 bg-[rgba(255,255,255,0.08)] px-4 py-4 text-sm leading-7 text-white/78">
-                Defina `OPENAI_API_KEY` no arquivo `.env.local` para habilitar este
-                assistente. Se quiser, tambem pode ajustar `OPENAI_MODEL`.
+                Defina `GROQ_API_KEY` ou `OPENAI_API_KEY` para habilitar este
+                assistente. Se quiser, tambem pode ajustar `GROQ_MODEL`,
+                `OPENAI_MODEL` e `AI_PROVIDER`.
               </div>
             )}
 
@@ -322,9 +323,9 @@ export function DashboardAssistant({
         aria-controls="dashboard-assistant-panel"
         aria-expanded={isOpen}
         aria-label={isOpen ? "Fechar assistente IA" : "Abrir assistente IA"}
-        className="group relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-[#7a3652] bg-[linear-gradient(135deg,rgba(91,18,40,0.98),rgba(57,10,26,0.98))] text-white shadow-[0_22px_60px_rgba(68,8,28,0.38)] transition hover:-translate-y-1 hover:brightness-110"
+        className="group relative inline-flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(255,227,188,0.14)] bg-[linear-gradient(135deg,rgba(26,9,14,0.98),rgba(83,23,40,0.98))] text-white shadow-[0_24px_70px_rgba(39,10,19,0.4)] transition hover:-translate-y-1 hover:brightness-110"
       >
-        <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top_left,rgba(255,220,190,0.18),transparent_30%)]" />
+        <span className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top_left,rgba(255,228,184,0.2),transparent_30%)]" />
         <Bot className="relative h-7 w-7" />
         <span className="absolute -left-1 -top-1 inline-flex min-w-7 items-center justify-center rounded-full border border-[#f3c195]/30 bg-[#f3c195] px-1.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#5a1831]">
           IA

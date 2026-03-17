@@ -4,9 +4,9 @@ import { UploadReportsForm } from "@/components/upload-reports-form";
 
 export function DashboardEmptyState() {
   return (
-    <section className="rounded-[32px] border border-[var(--line)] bg-white/86 p-8 shadow-[0_24px_80px_rgba(64,36,16,0.1)]">
+    <section className="premium-surface rounded-[36px] p-8">
       <div className="flex items-start gap-4">
-        <div className="rounded-2xl bg-[color:rgba(182,67,44,0.12)] p-3 text-[var(--accent)]">
+        <div className="rounded-[24px] bg-[color:rgba(159,35,68,0.12)] p-3 text-[var(--accent)] shadow-[0_16px_34px_rgba(159,35,68,0.12)]">
           <FileSpreadsheet className="h-6 w-6" />
         </div>
         <div>

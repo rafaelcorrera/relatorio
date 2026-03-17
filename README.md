@@ -7,7 +7,7 @@ Dashboard com login para analise de relatorios Excel de restaurante.
 - `GitHub` para versionamento do codigo
 - `Netlify` para hospedar o app Next.js
 - `Supabase` para autenticacao Google e persistencia dos bundles parseados
-- `OpenAI` para o assistente de perguntas dentro do dashboard
+- `Groq` ou `OpenAI` para o assistente de perguntas dentro do dashboard
 
 ## Como rodar localmente
 
@@ -42,6 +42,9 @@ ALLOWED_LOGIN_EMAILS=voce@empresa.com,gestor@empresa.com
 ADMIN_EMAIL=admin@gafs.local
 ADMIN_PASSWORD=gafs123
 SESSION_SECRET=troque-esta-chave-antes-de-publicar
+AI_PROVIDER=groq
+GROQ_API_KEY=cole-sua-chave-aqui
+GROQ_MODEL=openai/gpt-oss-20b
 OPENAI_API_KEY=cole-sua-chave-aqui
 OPENAI_MODEL=gpt-5-mini
 ```
@@ -52,6 +55,7 @@ Observacoes:
 - Se `ALLOWED_LOGIN_EMAILS` estiver preenchido, somente esses emails entram no painel.
 - Se `ALLOWED_LOGIN_EMAILS` estiver vazio, o projeto consulta a tabela `allowed_login_emails` no Supabase.
 - `ADMIN_EMAIL` e `ADMIN_PASSWORD` continuam como fallback para desenvolvimento local sem Supabase.
+- `AI_PROVIDER` aceita `groq` ou `openai`. Se nao vier preenchido, o projeto usa `groq` quando `GROQ_API_KEY` existir; caso contrario, cai para `openai`.
 
 ## Login Google com allowlist
 
@@ -132,11 +136,19 @@ O dashboard ja possui a caixa `Faça uma pergunta`.
 
 Como funciona:
 - a pergunta vai para `src/app/api/assistant/route.ts`
-- a OpenAI responde usando `Responses API`
+- o provedor configurado responde usando `Responses API`
 - o modelo usa `function calling` para consultar os dados do bundle atual
 - os numeros sao retornados a partir dos relatorios parseados, nao do Excel bruto
 
-Para ativar, basta definir:
+Para ativar com Groq, defina:
+
+```bash
+AI_PROVIDER=groq
+GROQ_API_KEY=cole-sua-chave-aqui
+GROQ_MODEL=openai/gpt-oss-20b
+```
+
+Ou, se preferir usar OpenAI:
 
 ```bash
 OPENAI_API_KEY=cole-sua-chave-aqui

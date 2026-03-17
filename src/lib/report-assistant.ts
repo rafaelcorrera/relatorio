@@ -43,6 +43,9 @@ type AssistantToolName =
   | "get_order_timeline";
 
 let openAIClient: OpenAI | null = null;
+let openAIClientCacheKey = "";
+
+type AssistantProvider = "openai" | "groq";
 
 function sortDateKeys(values: string[]) {
   return [...values].sort((a, b) => a.localeCompare(b));
@@ -85,23 +88,89 @@ function prettifyChannelLabel(value: string) {
   return value.replace(/_/g, " ").trim() || "Nao informado";
 }
 
-function getAssistantModel() {
-  return process.env.OPENAI_MODEL?.trim() || "gpt-5-mini";
+function normalizeProvider(value: string | undefined): AssistantProvider | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "openai" || normalized === "groq") {
+    return normalized;
+  }
+
+  return null;
+}
+
+export function getAssistantProvider(): AssistantProvider {
+  const explicitProvider = normalizeProvider(process.env.AI_PROVIDER);
+
+  if (explicitProvider) {
+    return explicitProvider;
+  }
+
+  if (process.env.GROQ_API_KEY?.trim()) {
+    return "groq";
+  }
+
+  return "openai";
+}
+
+export function getAssistantProviderLabel() {
+  return getAssistantProvider() === "groq" ? "Groq" : "OpenAI";
+}
+
+function getAssistantApiKey() {
+  return getAssistantProvider() === "groq"
+    ? process.env.GROQ_API_KEY?.trim() || ""
+    : process.env.OPENAI_API_KEY?.trim() || "";
+}
+
+function getAssistantBaseUrl() {
+  return getAssistantProvider() === "groq"
+    ? "https://api.groq.com/openai/v1"
+    : undefined;
+}
+
+function getDefaultModel() {
+  return getAssistantProvider() === "groq" ? "openai/gpt-oss-20b" : "gpt-5-mini";
+}
+
+export function getAssistantModel() {
+  return (
+    (getAssistantProvider() === "groq"
+      ? process.env.GROQ_MODEL?.trim()
+      : process.env.OPENAI_MODEL?.trim()) || getDefaultModel()
+  );
 }
 
 export function isAssistantConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return Boolean(getAssistantApiKey());
+}
+
+export function getAssistantConfigurationHint() {
+  return getAssistantProvider() === "groq"
+    ? "Defina `GROQ_API_KEY` e, se quiser, ajuste `GROQ_MODEL`."
+    : "Defina `OPENAI_API_KEY` e, se quiser, ajuste `OPENAI_MODEL`.";
 }
 
 function requireOpenAIClient() {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const apiKey = getAssistantApiKey();
 
   if (!apiKey) {
-    throw new Error("Configure OPENAI_API_KEY para habilitar o assistente de IA.");
+    throw new Error(
+      `${getAssistantConfigurationHint().replace(/^Defina /, "Configure ")}`.replace(/\.$/, " para habilitar o assistente de IA."),
+    );
   }
 
-  if (!openAIClient) {
-    openAIClient = new OpenAI({ apiKey });
+  const cacheKey = `${getAssistantProvider()}:${getAssistantModel()}:${apiKey.slice(0, 16)}`;
+
+  if (!openAIClient || openAIClientCacheKey !== cacheKey) {
+    openAIClient = new OpenAI({
+      apiKey,
+      baseURL: getAssistantBaseUrl(),
+    });
+    openAIClientCacheKey = cacheKey;
   }
 
   return openAIClient;

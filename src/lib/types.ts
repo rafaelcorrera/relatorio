@@ -1,4 +1,6 @@
 export type ReportKind = "orders" | "deliveries" | "performance" | "products";
+export type ExtendedReportKind = ReportKind | "productCurve";
+export type ValidationSeverity = "info" | "warning" | "error";
 
 export type ReportCoverage = Record<ReportKind, boolean>;
 
@@ -98,12 +100,94 @@ export interface ProductCurveRecord {
   abcClass: string;
 }
 
+export interface ParseSectionDiagnostics {
+  inputRows: number;
+  parsedRows: number;
+  skippedRows: number;
+  duplicatesRemoved: number;
+}
+
+export interface ParseSheetDiagnostics {
+  fileName: string;
+  sheetName: string;
+  kind: ExtendedReportKind | "unknown";
+  rowCount: number;
+  headerCount: number;
+}
+
+export interface FileContextDetails {
+  months: number[];
+  years: number[];
+  restaurantCodes: string[];
+}
+
+export interface BundleContextOverrides {
+  month?: number;
+  year?: number;
+  restaurantCode?: string;
+}
+
+export interface ParseDiagnostics {
+  fileContext: FileContextDetails;
+  sheets: ParseSheetDiagnostics[];
+  sections: Record<ExtendedReportKind, ParseSectionDiagnostics>;
+}
+
+export interface ValidationIssue {
+  code: string;
+  severity: ValidationSeverity;
+  message: string;
+  context?: Record<string, string | number | boolean | null>;
+}
+
+export interface BundleValidationTotals {
+  performanceGrossSales: number;
+  performanceFinalNetSales: number;
+  performanceOrders: number;
+  performanceDeliveryFee: number;
+  orderCount: number;
+  orderTotal: number;
+  orderProductsTotal: number;
+  orderAddOnsTotal: number;
+  orderDiscountTotal: number;
+  orderDeliveryFeeTotal: number;
+  deliveryCount: number;
+  deliveryCountFromOrders: number;
+  deliveryOrderTotal: number;
+  deliveryFeeTotal: number;
+  productQuantityTotal: number;
+  productCurveProductCount: number;
+  productCurveSplitProductCount: number;
+  productCurveMultiClassProductCount: number;
+  productCurveQuantityTotal: number;
+  productCurveRevenueTotal: number;
+}
+
+export interface BundleValidationReport {
+  status: "approved" | "approved_with_warnings" | "rejected";
+  validatedAt: string;
+  source: {
+    directory?: string | null;
+    fileCount: number;
+  };
+  fileContext: FileContextDetails;
+  totals: BundleValidationTotals;
+  diagnostics: ParseDiagnostics;
+  issues: ValidationIssue[];
+}
+
+export interface ParseReportBundleResult {
+  bundle: ParsedBundle;
+  diagnostics: ParseDiagnostics;
+}
+
 export interface ParsedBundle extends BundleMeta {
   performance: PerformanceDay[];
   orders: OrderRecord[];
   deliveries: DeliveryRecord[];
   productSales: ProductSalesRecord[];
   productCurve: ProductCurveRecord[];
+  validation?: BundleValidationReport | null;
 }
 
 export interface ReportStore {

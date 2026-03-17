@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { getSession } from "@/lib/auth";
 import {
+  getAssistantProviderLabel,
   generateAssistantAnswer,
   type AssistantHistoryMessage,
   type AssistantSection,
@@ -48,6 +49,7 @@ function sanitizeSection(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const providerLabel = getAssistantProviderLabel();
   const session = await getSession();
 
   if (!session) {
@@ -108,8 +110,10 @@ export async function POST(request: Request) {
         {
           error:
             error.status === 401
-              ? "A chave da OpenAI foi rejeitada. Revise OPENAI_API_KEY."
-              : "A OpenAI nao conseguiu processar a pergunta agora. Tente novamente em instantes.",
+              ? `A chave da ${providerLabel} foi rejeitada. Revise a configuracao do provedor.`
+              : error.status === 429
+                ? `A ${providerLabel} recusou a pergunta por limite ou falta de quota. Revise o plano e tente novamente.`
+                : `A ${providerLabel} nao conseguiu processar a pergunta agora. Tente novamente em instantes.`,
         },
         { status: error.status || 500 },
       );

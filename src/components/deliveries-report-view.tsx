@@ -158,17 +158,17 @@ export function DeliveriesReportView({
         <Panel eyebrow="Hora a hora" title="Volume de pedidos por hora">
           <form
             method="GET"
-            className="mb-4 grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--panel-soft)] p-4 md:grid-cols-[1fr_auto]"
+            className="premium-note mb-4 grid gap-3 rounded-[26px] p-4 md:grid-cols-[1fr_auto]"
           >
             <input type="hidden" name="bundle" value={bundleKey} />
             <input type="hidden" name="start" value={view.filters.start} />
             <input type="hidden" name="end" value={view.filters.end} />
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Dia do detalhamento
               <select
                 name="volumeDay"
                 defaultValue={view.filters.selectedVolumeDay}
-                className="h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-select text-sm"
               >
                 <option value="">Todo o intervalo</option>
                 {view.filters.volumeDayOptions.map((option) => (
@@ -180,7 +180,7 @@ export function DeliveriesReportView({
             </label>
             <button
               type="submit"
-              className="self-end rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="premium-button self-end"
             >
               Aplicar dia
             </button>

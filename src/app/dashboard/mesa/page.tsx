@@ -31,12 +31,12 @@ export default async function MesaPage({
         selectedBundle && view ? (
           <form method="GET" className="grid gap-4 md:grid-cols-[1fr_auto_auto]">
             <input type="hidden" name="bundle" value={selectedBundle.periodKey} />
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <label className="premium-field text-sm font-medium text-[var(--ink)]">
               Dia de mesa
               <select
                 name="day"
                 defaultValue={view.filters.selectedDay}
-                className="h-12 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className="premium-select text-sm"
               >
                 <option value="">Todo o periodo</option>
                 {view.filters.dayOptions.map((option) => (
@@ -48,13 +48,13 @@ export default async function MesaPage({
             </label>
             <button
               type="submit"
-              className="self-end rounded-2xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:brightness-105"
+              className="premium-button self-end"
             >
               Aplicar filtro
             </button>
             <Link
               href={`/dashboard/mesa?bundle=${selectedBundle.periodKey}`}
-              className="self-end rounded-2xl border border-[var(--line)] px-5 py-3 text-center text-sm font-medium text-[var(--ink)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              className="premium-button-secondary self-end"
             >
               Limpar
             </Link>

@@ -1,5 +1,10 @@
 import "server-only";
 
+import {
+  aggregateProductCurve,
+  buildProductLookup,
+  resolveProductLookup,
+} from "@/lib/product-curve";
 import type {
   ParsedBundle,
   PerformanceDay,
@@ -439,10 +444,6 @@ function buildDailyCountRevenueSeries<
       revenue: current.revenue,
     };
   });
-}
-
-function buildProductKey(category: string, product: string) {
-  return `${normalizeText(category)}|${normalizeText(product)}`;
 }
 
 function normalizeAbcClass(value: string) {
@@ -960,9 +961,8 @@ export function buildProductsView(
   channelParam?: string,
 ): ProductsViewData {
   const hasCurveData = bundle.productCurve.length > 0;
-  const curveIndex = new Map(
-    bundle.productCurve.map((item) => [buildProductKey(item.category, item.product), item]),
-  );
+  const aggregatedCurve = aggregateProductCurve(bundle.productCurve);
+  const curveLookup = buildProductLookup(aggregatedCurve);
   const categoryOptions = groupSum(
     bundle.productSales,
     (item) => item.category || "Sem categoria",
@@ -999,7 +999,7 @@ export function buildProductsView(
     : "";
 
   const mergedProducts = bundle.productSales.map((item) => {
-    const curve = curveIndex.get(buildProductKey(item.category, item.product));
+    const curve = resolveProductLookup(curveLookup, item.category, item.product).item;
     const averagePrice = curve?.averagePrice ||
       (curve?.totalQuantity ? curve.totalRevenue / curve.totalQuantity : 0);
     const totalRevenue = curve?.totalRevenue || averagePrice * item.totalQuantity;
