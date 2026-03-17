@@ -3,8 +3,9 @@ import Link from "next/link";
 import { DashboardEmptyState } from "@/components/dashboard-empty-state";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DeliveriesReportView } from "@/components/deliveries-report-view";
+import { getRestaurantBundles, mergeBundles } from "@/lib/bundle-range";
 import { loadDashboardContext } from "@/lib/dashboard-loader";
-import { buildDeliveriesView } from "@/lib/report-views";
+import { buildDeliveriesView, findDateBounds } from "@/lib/report-views";
 
 export default async function DeliveriesPage({
   searchParams,
@@ -18,12 +19,27 @@ export default async function DeliveriesPage({
 }) {
   const params = await searchParams;
   const { session, bundles, selectedBundle } = await loadDashboardContext(params.bundle);
-  const view = selectedBundle
-    ? buildDeliveriesView(
-        selectedBundle,
-        params.start,
-        params.end,
+  const restaurantBundles = selectedBundle
+    ? getRestaurantBundles(bundles, selectedBundle.restaurantCode)
+    : [];
+  const restaurantRangeBundle = restaurantBundles.length
+    ? mergeBundles(restaurantBundles)
+    : null;
+  const selectedBounds = selectedBundle
+    ? findDateBounds(selectedBundle.deliveries)
+    : { min: "", max: "" };
+  const dataBundle = selectedBundle
+    ? params.start || params.end
+      ? restaurantRangeBundle || selectedBundle
+      : selectedBundle
+    : null;
+  const view = dataBundle && restaurantRangeBundle
+      ? buildDeliveriesView(
+        dataBundle,
+        params.start || selectedBounds.min || undefined,
+        params.end || selectedBounds.max || undefined,
         params.volumeDay,
+        restaurantRangeBundle,
       )
     : null;
 
@@ -79,6 +95,10 @@ export default async function DeliveriesPage({
             >
               Limpar
             </Link>
+            <p className="md:col-span-4 text-xs leading-6 text-[var(--muted)]">
+              O intervalo pode cruzar meses ja importados. Ao sair do mes atual, a tela consolida os bundles
+              disponiveis e preserva o filtro por dia no quadro hora a hora.
+            </p>
           </form>
         ) : null
       }

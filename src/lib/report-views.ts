@@ -197,7 +197,7 @@ function uniqueDateOptions<
   }));
 }
 
-function findDateBounds<
+export function findDateBounds<
   T extends {
     dateKey: string;
   },
@@ -486,8 +486,9 @@ export function buildRevenueView(
   bundle: ParsedBundle,
   startParam?: string,
   endParam?: string,
+  boundsSource: ParsedBundle = bundle,
 ): RevenueViewData {
-  const bounds = findDateBounds(bundle.performance);
+  const bounds = findDateBounds(boundsSource.performance);
   const filters = normalizeDateRange(startParam, endParam, bounds.min, bounds.max);
   const performance = bundle.performance.filter((item) =>
     inRange(item.dateKey, filters.start, filters.end),
@@ -600,8 +601,9 @@ export function buildDeliveriesView(
   startParam?: string,
   endParam?: string,
   volumeDayParam?: string,
+  boundsSource: ParsedBundle = bundle,
 ): DeliveriesViewData {
-  const bounds = findDateBounds(bundle.deliveries);
+  const bounds = findDateBounds(boundsSource.deliveries);
   const filters = normalizeDateRange(startParam, endParam, bounds.min, bounds.max);
   const deliveries =
     filters.start && filters.end

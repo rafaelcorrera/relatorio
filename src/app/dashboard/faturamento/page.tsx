@@ -3,8 +3,9 @@ import Link from "next/link";
 import { DashboardEmptyState } from "@/components/dashboard-empty-state";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { RevenueReportView } from "@/components/revenue-report-view";
+import { getRestaurantBundles, mergeBundles } from "@/lib/bundle-range";
 import { loadDashboardContext } from "@/lib/dashboard-loader";
-import { buildRevenueView } from "@/lib/report-views";
+import { buildRevenueView, findDateBounds } from "@/lib/report-views";
 
 export default async function BillingPage({
   searchParams,
@@ -17,8 +18,27 @@ export default async function BillingPage({
 }) {
   const params = await searchParams;
   const { session, bundles, selectedBundle } = await loadDashboardContext(params.bundle);
-  const view = selectedBundle
-    ? buildRevenueView(selectedBundle, params.start, params.end)
+  const restaurantBundles = selectedBundle
+    ? getRestaurantBundles(bundles, selectedBundle.restaurantCode)
+    : [];
+  const restaurantRangeBundle = restaurantBundles.length
+    ? mergeBundles(restaurantBundles)
+    : null;
+  const selectedBounds = selectedBundle
+    ? findDateBounds(selectedBundle.performance)
+    : { min: "", max: "" };
+  const dataBundle = selectedBundle
+    ? params.start || params.end
+      ? restaurantRangeBundle || selectedBundle
+      : selectedBundle
+    : null;
+  const view = dataBundle && restaurantRangeBundle
+    ? buildRevenueView(
+        dataBundle,
+        params.start || selectedBounds.min || undefined,
+        params.end || selectedBounds.max || undefined,
+        restaurantRangeBundle,
+      )
     : null;
 
   return (
@@ -68,6 +88,10 @@ export default async function BillingPage({
             >
               Limpar
             </Link>
+            <p className="md:col-span-4 text-xs leading-6 text-[var(--muted)]">
+              O filtro pode atravessar meses ja carregados. Se voce escolher um intervalo como
+              {" "}15/01 ate 03/02, o painel combina automaticamente os bundles disponiveis do restaurante.
+            </p>
           </form>
         ) : null
       }
