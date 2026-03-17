@@ -355,6 +355,44 @@ function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
   return [...map.values()];
 }
 
+function formatKeyNumber(value: number) {
+  return Number.isFinite(value) ? value.toFixed(6) : "0";
+}
+
+function buildOrderRowKey(item: OrderRecord) {
+  return [
+    item.dateKey,
+    item.timeLabel,
+    item.orderNumber,
+    item.origin,
+    item.sourceId,
+    formatKeyNumber(item.productsTotal),
+    formatKeyNumber(item.addOnsTotal),
+    formatKeyNumber(item.serviceFee),
+    formatKeyNumber(item.deliveryFee),
+    formatKeyNumber(item.total),
+    formatKeyNumber(item.discount),
+    item.payment,
+    item.paymentMethod,
+    item.user,
+  ].join("|");
+}
+
+function buildDeliveryRowKey(item: DeliveryRecord) {
+  return [
+    item.dateKey,
+    item.timeLabel,
+    item.orderNumber,
+    item.origin,
+    item.customer,
+    item.courier,
+    item.neighborhood,
+    formatKeyNumber(item.deliveryFee),
+    formatKeyNumber(item.orderTotal),
+    formatKeyNumber(item.courierPayout),
+  ].join("|");
+}
+
 function finalizeSection<T>(
   items: T[],
   getKey: (item: T) => string,
@@ -711,7 +749,7 @@ export function parseReportBundleWithDiagnostics(
 
   const ordersSection = finalizeSection(
     ordersAccumulator,
-    (item) => `${item.dateKey}-${item.orderNumber}-${item.origin}`,
+    buildOrderRowKey,
     diagnostics.sections.orders.inputRows,
     diagnostics.sections.orders.skippedRows,
     (left, right) =>
@@ -719,7 +757,7 @@ export function parseReportBundleWithDiagnostics(
   );
   const deliveriesSection = finalizeSection(
     deliveriesAccumulator,
-    (item) => `${item.dateKey}-${item.orderNumber}`,
+    buildDeliveryRowKey,
     diagnostics.sections.deliveries.inputRows,
     diagnostics.sections.deliveries.skippedRows,
     (left, right) =>
